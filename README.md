@@ -12,6 +12,35 @@ This repository contains experimental implementations for:
 
 The goal is to bridge the gap between **AI models and physical-world interaction**.
 
+## Repository structure
+
+The workspace is organized into four main areas:
+
+- docker/ros2-jazzy/: ROS 2 Jazzy development environment and container configuration
+- ros2_ws/src/: ROS 2 packages for robotics workflows
+  - tutorial_pkg
+  - camera_receiver
+  - rf_detr_ros
+  - ackermann_controller
+- perception/: perception models, experiments, and related tooling
+- simulation/: simulation assets and environment setup
+
+A typical layout looks like this:
+
+```text
+physical-ai-playground/
+├── docker/
+│   └── ros2-jazzy/
+├── ros2_ws/
+│   └── src/
+│       ├── tutorial_pkg
+│       ├── camera_receiver
+│       ├── rf_detr_ros
+│       └── ackermann_controller
+├── perception/
+└── simulation/
+```
+
 ---
 
 ## Overview

@@ -1,4 +1,5 @@
 import os
+import json
 import numpy as np
 from PIL import Image
 
@@ -9,6 +10,91 @@ from nuscenes.nuscenes import NuScenes
 from rfdetr import RFDETRSegMedium
 
 import supervision as sv
+
+
+def bottom_envelope(mask: np.ndarray) -> np.ndarray:
+    """Return the lowest mask pixel for every x coordinate.
+
+    Image coordinates grow downwards, so the largest y value is the pixel
+    closest to the ground in this image-based approximation.
+    """
+    points = []
+    for x in range(mask.shape[1]):
+        ys = np.flatnonzero(mask[:, x])
+        if ys.size:
+            points.append((x, int(ys[-1])))
+    return np.asarray(points, dtype=np.int32)
+
+
+def extract_ground_contacts(
+    mask: np.ndarray,
+    *,
+    vertical_tolerance_ratio: float = 0.025,
+    min_separation_ratio: float = 0.08,
+) -> tuple[np.ndarray, list[dict]]:
+    """Extract visible ground-contact candidates from one instance mask.
+
+    The bottom envelope is thresholded to a narrow band above its lowest
+    pixel.  Contiguous bands are usually the visible bottoms of wheels or
+    feet.  One representative point is returned per band, which avoids
+    treating every bottom-envelope pixel as a separate contact.
+
+    This is a 2-D *visible-contact* estimate.  It cannot recover a wheel or
+    foot hidden by occlusion, and assumes the camera is roughly upright.
+    """
+    envelope = bottom_envelope(mask)
+    if envelope.size == 0:
+        return envelope, []
+
+    xs, ys = envelope[:, 0], envelope[:, 1]
+    object_height = max(1, int(ys.max() - ys.min() + 1))
+    tolerance = max(2, int(round(object_height * vertical_tolerance_ratio)))
+    bottom_y = int(ys.max())
+
+    # Only keep the part of the silhouette indistinguishable from its lowest
+    # point.  With separated wheels this naturally produces separate runs.
+    near_ground = ys >= bottom_y - tolerance
+    candidate_indices = np.flatnonzero(near_ground)
+    if candidate_indices.size == 0:
+        return envelope, []
+
+    # Split runs not only at missing x values but also when they are far apart
+    # relative to the object's image width.  The latter suppresses duplicates
+    # caused by small gaps/noise around a single tire.
+    object_width = max(1, int(xs.max() - xs.min() + 1))
+    max_gap = max(1, int(round(object_width * min_separation_ratio)))
+    runs = []
+    start = 0
+    for i in range(1, candidate_indices.size):
+        previous_x = xs[candidate_indices[i - 1]]
+        current_x = xs[candidate_indices[i]]
+        if current_x - previous_x > max_gap:
+            runs.append(candidate_indices[start:i])
+            start = i
+    runs.append(candidate_indices[start:])
+
+    contacts = []
+    for run in runs:
+        run_y = ys[run]
+        run_x = xs[run]
+        lowest_y = int(run_y.max())
+        # A flat wheel/foot bottom has several equal lowest pixels.  Its median
+        # gives a stable point instead of choosing an arbitrary left edge.
+        lowest_x = run_x[run_y == lowest_y]
+        contact_x = int(np.median(lowest_x))
+        support_width = int(run_x.max() - run_x.min() + 1)
+        vertical_score = 1.0 - (bottom_y - lowest_y) / max(tolerance, 1)
+        support_score = min(1.0, support_width / max(3, object_width * 0.08))
+        contacts.append({
+            "x": contact_x,
+            "y": lowest_y,
+            "score": round(float(0.8 * vertical_score + 0.2 * support_score), 3),
+            "support_width_px": support_width,
+        })
+
+    # Highest score first, then left-to-right for deterministic ties.
+    contacts.sort(key=lambda p: (-p["score"], p["x"]))
+    return envelope, contacts
 
 
 # ==========================
@@ -137,42 +223,37 @@ annotated = label_annotator.annotate(
 print("Extracting bottom pixels...")
 
 
+ground_contact_results = []
+
 if detections.mask is not None:
 
     masks = detections.mask
 
 
     for obj_id, mask in enumerate(masks):
+        bottom_points, contacts = extract_ground_contacts(mask)
 
-        h, w = mask.shape
-
-
-        bottom_points = []
-
-
-        # x 방향으로 scan
-        for x in range(w):
-
-            ys = np.where(mask[:, x])[0]
-
-
-            if len(ys) > 0:
-
-                y_bottom = ys.max()
-
-                bottom_points.append(
-                    [x, y_bottom]
-                )
-
-
-        bottom_points = np.array(
-            bottom_points
+        class_id = (
+            int(detections.class_id[obj_id])
+            if detections.class_id is not None else None
         )
+        confidence = (
+            float(detections.confidence[obj_id])
+            if detections.confidence is not None else None
+        )
+        result = {
+            "object_id": obj_id,
+            "class_id": class_id,
+            "detection_confidence": confidence,
+            # Ordered by estimated contact likelihood (score), not x position.
+            "ground_contacts": contacts,
+        }
+        ground_contact_results.append(result)
 
 
         print(
-            f"Object {obj_id}:",
-            bottom_points.shape
+            f"Object {obj_id}: {len(contacts)} contact candidate(s)",
+            contacts
         )
 
 
@@ -190,6 +271,27 @@ if detections.mask is not None:
                 -1
             )
 
+        # Yellow cross: selected visible ground-contact point.  The numeric
+        # score is a relative ranking within this object's bottom silhouette.
+        for rank, contact in enumerate(contacts, start=1):
+            point = (contact["x"], contact["y"])
+            cv2.drawMarker(
+                annotated, point, (255, 255, 0),
+                markerType=cv2.MARKER_CROSS,
+                markerSize=12,
+                thickness=2,
+            )
+            cv2.putText(
+                annotated,
+                str(rank),
+                (point[0] + 4, point[1] - 5),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.45,
+                (255, 255, 0),
+                1,
+                cv2.LINE_AA,
+            )
+
 
 else:
 
@@ -202,6 +304,7 @@ else:
 # ==========================
 
 out_file = "rfdetr_bottom_envelope.jpg"
+contacts_file = "rfdetr_ground_contacts.json"
 
 
 Image.fromarray(
@@ -212,4 +315,8 @@ Image.fromarray(
 print("====================")
 print("Saved:")
 print(out_file)
+with open(contacts_file, "w", encoding="utf-8") as f:
+    json.dump(ground_contact_results, f, ensure_ascii=False, indent=2)
+
+print(contacts_file)
 print("====================")

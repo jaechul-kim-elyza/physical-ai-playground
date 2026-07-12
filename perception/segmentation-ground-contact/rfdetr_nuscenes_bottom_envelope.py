@@ -92,6 +92,77 @@ def extract_ground_contacts(
             "support_width_px": support_width,
         })
 
+    # A side-view vehicle can have a front wheel that is visibly higher than
+    # its rear wheel because of perspective.  It would be excluded by the
+    # global lowest-point band above, so also collect pronounced *local*
+    # bottoms of the envelope.  The smoothing prevents one-pixel mask noise
+    # from becoming a contact point.
+    smoothing_sigma = max(1.0, object_width * 0.01)
+    smooth_y = cv2.GaussianBlur(
+        ys.astype(np.float32).reshape(1, -1),
+        (0, 0),
+        sigmaX=smoothing_sigma,
+    ).ravel()
+    local_radius = max(3, int(round(object_width * 0.05)))
+    local_kernel = np.ones((1, 2 * local_radius + 1), dtype=np.uint8)
+    local_max = cv2.dilate(smooth_y.reshape(1, -1), local_kernel).ravel()
+    lower_envelope_limit = np.percentile(ys, 65)
+    local_indices = np.flatnonzero(
+        (smooth_y >= local_max - 0.25) & (ys >= lower_envelope_limit)
+    )
+
+    if local_indices.size:
+        local_runs = []
+        start = 0
+        for i in range(1, local_indices.size):
+            if local_indices[i] != local_indices[i - 1] + 1:
+                local_runs.append(local_indices[start:i])
+                start = i
+        local_runs.append(local_indices[start:])
+
+        for run in local_runs:
+            run_y = ys[run]
+            run_x = xs[run]
+            lowest_y = int(run_y.max())
+            lowest_x = run_x[run_y == lowest_y]
+            contact_x = int(np.median(lowest_x))
+            support_width = int(run_x.max() - run_x.min() + 1)
+
+            # Discard a nearly flat lower body edge.  A wheel/foot bottom is
+            # lower than its neighbouring envelope by at least a few pixels.
+            center = int(np.median(run))
+            left = max(0, center - local_radius)
+            right = min(len(ys) - 1, center + local_radius)
+            neighbour_y = (smooth_y[left] + smooth_y[right]) / 2
+            prominence = smooth_y[center] - neighbour_y
+            if prominence < max(2.0, tolerance * 0.5):
+                continue
+
+            local_score = 0.6 + 0.4 * (
+                (lowest_y - lower_envelope_limit)
+                / max(1.0, bottom_y - lower_envelope_limit)
+            )
+            candidate = {
+                "x": contact_x,
+                "y": lowest_y,
+                "score": round(float(np.clip(local_score, 0.0, 1.0)), 3),
+                "support_width_px": support_width,
+            }
+
+            # A global and a local method can choose the same wheel.  Keep
+            # one candidate, preferring the higher confidence measurement.
+            nearest = next(
+                (
+                    existing for existing in contacts
+                    if abs(existing["x"] - contact_x) <= local_radius
+                ),
+                None,
+            )
+            if nearest is None:
+                contacts.append(candidate)
+            elif candidate["score"] > nearest["score"]:
+                contacts[contacts.index(nearest)] = candidate
+
     # Highest score first, then left-to-right for deterministic ties.
     contacts.sort(key=lambda p: (-p["score"], p["x"]))
     return envelope, contacts
@@ -102,6 +173,12 @@ def extract_ground_contacts(
 # ==========================
 
 DATA_ROOT = "/home/kim/datasets/nuScenes"
+# Example side-view SUV (front and rear wheels are clearly visible):
+# NUSCENES_CAMERA_CHANNEL=CAM_BACK_LEFT \
+# NUSCENES_SAMPLE_TOKEN=d7387fb5a21d40a990a5842cca61af1c \
+# .venv/bin/python perception/segmentation-ground-contact/rfdetr_nuscenes_bottom_envelope.py
+CAMERA_CHANNEL = os.getenv("NUSCENES_CAMERA_CHANNEL", "CAM_FRONT")
+SAMPLE_TOKEN = os.getenv("NUSCENES_SAMPLE_TOKEN")
 
 
 nusc = NuScenes(
@@ -115,15 +192,19 @@ nusc = NuScenes(
 # 2. Load CAM_FRONT image
 # ==========================
 
-scene = nusc.scene[0]
+if SAMPLE_TOKEN:
+    sample = nusc.get("sample", SAMPLE_TOKEN)
+else:
+    scene = nusc.scene[0]
+    sample = nusc.get("sample", scene["first_sample_token"])
 
-sample = nusc.get(
-    "sample",
-    scene["first_sample_token"]
-)
 
+if CAMERA_CHANNEL not in sample["data"]:
+    raise ValueError(
+        f"{CAMERA_CHANNEL} is not available for sample {sample['token']}"
+    )
 
-cam_token = sample["data"]["CAM_FRONT"]
+cam_token = sample["data"][CAMERA_CHANNEL]
 
 
 cam_data = nusc.get(
@@ -140,6 +221,7 @@ img_path = os.path.join(
 
 print("Image:")
 print(img_path)
+print("Camera channel:", CAMERA_CHANNEL)
 
 
 image = Image.open(img_path).convert("RGB")

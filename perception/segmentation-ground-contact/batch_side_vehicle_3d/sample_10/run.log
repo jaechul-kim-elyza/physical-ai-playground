@@ -1,0 +1,164 @@
+======
+Loading NuScenes tables for version v1.0-mini...
+23 category,
+8 attribute,
+4 visibility,
+911 instance,
+12 sensor,
+120 calibrated_sensor,
+31206 ego_pose,
+8 log,
+10 scene,
+404 sample,
+31206 sample_data,
+18538 sample_annotation,
+4 map,
+Done loading in 0.309 seconds.
+======
+Reverse indexing ...
+Done reverse indexing in 0.1 seconds.
+======
+Image:
+/home/kim/datasets/nuScenes/samples/CAM_FRONT_RIGHT/n008-2018-08-28-16-43-51-0400__CAM_FRONT_RIGHT__1535489306420482.jpg
+Camera channel: CAM_FRONT_RIGHT
+Ground plane (global z): 0.0
+Image size: (1600, 900)
+Loading RF-DETR...
+[2026-07-13 08:38:37] [INFO] rf-detr - File /home/kim/.roboflow/models/rf-detr-seg-medium.pt already exists with correct MD5 hash.
+[2026-07-13 08:38:37] [WARNING] rf-detr - Using a different number of positional encodings than DINOv2, which means we're not loading DINOv2 backbone weights. This is not a problem if finetuning a pretrained RF-DETR model.
+[2026-07-13 08:38:37] [WARNING] rf-detr - Using patch size 12 instead of 14, which means we're not loading DINOv2 backbone weights. This is not a problem if finetuning a pretrained RF-DETR model.
+[2026-07-13 08:38:38] [INFO] rf-detr - File /home/kim/.roboflow/models/rf-detr-seg-medium.pt already exists with correct MD5 hash.
+[2026-07-13 08:38:38] [WARNING] rf-detr - load_pretrain_weights: checkpoint lacks args.num_queries / args.group_detr; falling back to flat slice. With group_detr=13 this may scramble per-group query structure if the checkpoint was trained with group_detr > 1.
+[2026-07-13 08:38:38] [WARNING] rf-detr - Pretrained weights at '/home/kim/.roboflow/models/rf-detr-seg-medium.pt' loaded only partially — this typically produces lower accuracy. 1 model parameter(s) not in checkpoint (left at random init): [_kp_active_mask]. Check that the model configuration (encoder, hidden_dim, out_feature_indexes, projector_scale, ...) matches the architecture the checkpoint was trained with.
+[2026-07-13 08:38:38] [WARNING] rf-detr - Model is not optimized for inference. Latency may be higher than expected. For full GPU throughput (e.g. ~8x on T4 via FP16 Tensor Cores), call model.optimize_for_inference(dtype=torch.float16).
+Inference...
+<class 'supervision.detection.core.Detections'>
+Detections(xyxy=array([[  29.554998,  431.32025 ,  346.86237 ,  532.8464  ],
+       [ 579.4945  ,  421.63184 ,  719.32404 ,  480.4121  ],
+       [ 761.893   ,  111.28767 ,  799.78784 ,  193.7612  ],
+       [ 937.2396  ,  118.23349 ,  977.1486  ,  200.42284 ],
+       [ 788.4779  ,  398.26657 ,  912.02356 ,  465.22305 ],
+       [1005.67505 ,  380.82913 , 1117.344   ,  460.11484 ],
+       [1173.6545  ,  434.71255 , 1217.4816  ,  454.56076 ]],
+      dtype=float32), mask=array([[[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]],
+
+       [[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]],
+
+       [[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]],
+
+       ...,
+
+       [[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]],
+
+       [[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]],
+
+       [[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]]],
+      shape=(7, 900, 1600)), confidence=array([0.9360939 , 0.91793746, 0.82621306, 0.82446116, 0.69329995,
+       0.6637233 , 0.5502005 ], dtype=float32), class_id=array([ 3,  3, 10, 10,  3,  8,  3]), tracker_id=None, data={'source_shape': array([[ 900, 1600],
+       [ 900, 1600],
+       [ 900, 1600],
+       [ 900, 1600],
+       [ 900, 1600],
+       [ 900, 1600],
+       [ 900, 1600]]), 'class_name': array(['car', 'car', 'traffic light', 'traffic light', 'car', 'truck',
+       'car'], dtype=object)}, metadata={'source_image': array([[[26, 21, 27],
+        [25, 20, 26],
+        [25, 20, 26],
+        ...,
+        [68, 83, 90],
+        [61, 75, 86],
+        [57, 71, 82]],
+
+       [[26, 21, 27],
+        [25, 20, 26],
+        [25, 20, 26],
+        ...,
+        [68, 83, 90],
+        [62, 76, 87],
+        [57, 71, 82]],
+
+       [[26, 21, 27],
+        [25, 20, 26],
+        [24, 19, 25],
+        ...,
+        [70, 85, 92],
+        [63, 77, 88],
+        [58, 72, 83]],
+
+       ...,
+
+       [[19, 35, 34],
+        [19, 35, 34],
+        [21, 35, 35],
+        ...,
+        [60, 65, 59],
+        [61, 66, 60],
+        [62, 67, 61]],
+
+       [[19, 35, 34],
+        [19, 35, 34],
+        [20, 34, 34],
+        ...,
+        [60, 65, 59],
+        [61, 66, 60],
+        [62, 67, 61]],
+
+       [[21, 37, 36],
+        [21, 37, 36],
+        [23, 37, 37],
+        ...,
+        [60, 65, 59],
+        [61, 66, 60],
+        [62, 67, 61]]], shape=(900, 1600, 3), dtype=uint8)})
+Visualization...
+Extracting bottom pixels...
+Object 0: 2 contact candidate(s) [{'x': 94, 'y': 531, 'score': 1.0, 'support_width_px': 5}, {'x': 154, 'y': 529, 'score': 0.92, 'support_width_px': 8}]
+Estimated 3D box: {'frame': 'global', 'center_xyz': [1294.667696, 1098.656273, 1.2], 'size_lwh_m': [6.75, 1.8, 2.4], 'yaw_rad': 0.5997, 'wheelbase_observed_m': 2.317, 'dimension_source': 'class_prior', 'side_anchor': 'visible_wheel_line_shifted_away_from_ego', 'visible_wheel_line_midpoint_xy': [1294.928, 1097.744], 'segmentation_longitudinal_offset_m': 0.3, 'segmentation_fit': {'method': 'projected_3d_bounds_enclose_mask', 'contour_coverage': 0.3165}}
+Ego-nearest ground contact: {'x': 1293.972, 'y': 1097.09, 'z': 0.0, 'source_pixel': [94, 531], 'score': 1.0, 'distance_to_ego_m': 62.641, 'is_nearest_to_ego': True}
+Object 1: 1 contact candidate(s) [{'x': 599, 'y': 480, 'score': 1.0, 'support_width_px': 15}]
+Object 2: 1 contact candidate(s) [{'x': 784, 'y': 194, 'score': 1.0, 'support_width_px': 30}]
+Object 3: 1 contact candidate(s) [{'x': 970, 'y': 202, 'score': 1.0, 'support_width_px': 22}]
+Object 4: 3 contact candidate(s) [{'x': 815, 'y': 464, 'score': 1.0, 'support_width_px': 25}, {'x': 853, 'y': 464, 'score': 1.0, 'support_width_px': 21}, {'x': 900, 'y': 462, 'score': 0.2, 'support_width_px': 14}]
+Object 5: 1 contact candidate(s) [{'x': 1059, 'y': 458, 'score': 1.0, 'support_width_px': 89}]
+Object 6: 1 contact candidate(s) [{'x': 1187, 'y': 454, 'score': 1.0, 'support_width_px': 37}]
+====================
+Saved:
+batch_side_vehicle_3d/sample_10/rfdetr_bottom_envelope.jpg
+batch_side_vehicle_3d/sample_10/rfdetr_ground_contacts.json
+====================

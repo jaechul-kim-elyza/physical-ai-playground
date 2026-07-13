@@ -1,0 +1,289 @@
+[
+  {
+    "object_id": 0,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.9577524662017822,
+    "ground_contacts": [
+      {
+        "x": 659,
+        "y": 784,
+        "score": 1.0,
+        "support_width_px": 60
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 667.026,
+        "y": 1817.535,
+        "z": 0.0,
+        "source_pixel": [
+          659,
+          784
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 8.413,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 667.026,
+      "y": 1817.535,
+      "z": 0.0,
+      "source_pixel": [
+        659,
+        784
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 8.413,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 1,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.955136239528656,
+    "ground_contacts": [
+      {
+        "x": 36,
+        "y": 711,
+        "score": 1.0,
+        "support_width_px": 53
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 662.261,
+        "y": 1822.069,
+        "z": 0.0,
+        "source_pixel": [
+          36,
+          711
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 13.856,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 662.261,
+      "y": 1822.069,
+      "z": 0.0,
+      "source_pixel": [
+        36,
+        711
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 13.856,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 2,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.9430004954338074,
+    "ground_contacts": [
+      {
+        "x": 1488,
+        "y": 636,
+        "score": 1.0,
+        "support_width_px": 27
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 675.384,
+        "y": 1821.251,
+        "z": 0.0,
+        "source_pixel": [
+          1488,
+          636
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 14.63,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 675.384,
+      "y": 1821.251,
+      "z": 0.0,
+      "source_pixel": [
+        1488,
+        636
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 14.63,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 3,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.9379271268844604,
+    "ground_contacts": [
+      {
+        "x": 1192,
+        "y": 618,
+        "score": 1.0,
+        "support_width_px": 5
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 673.853,
+        "y": 1824.211,
+        "z": 0.0,
+        "source_pixel": [
+          1192,
+          618
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 16.489,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 673.853,
+      "y": 1824.211,
+      "z": 0.0,
+      "source_pixel": [
+        1192,
+        618
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 16.489,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 4,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.854710042476654,
+    "ground_contacts": [
+      {
+        "x": 482,
+        "y": 549,
+        "score": 1.0,
+        "support_width_px": 19
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 663.759,
+        "y": 1862.464,
+        "z": 0.0,
+        "source_pixel": [
+          482,
+          549
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 53.452,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 663.759,
+      "y": 1862.464,
+      "z": 0.0,
+      "source_pixel": [
+        482,
+        549
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 53.452,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 5,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.8543569445610046,
+    "ground_contacts": [
+      {
+        "x": 447,
+        "y": 537,
+        "score": 1.0,
+        "support_width_px": 41
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 660.301,
+        "y": 1889.65,
+        "z": 0.0,
+        "source_pixel": [
+          447,
+          537
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 80.822,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 660.301,
+      "y": 1889.65,
+      "z": 0.0,
+      "source_pixel": [
+        447,
+        537
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 80.822,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 6,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.8327248096466064,
+    "ground_contacts": [
+      {
+        "x": 993,
+        "y": 588,
+        "score": 1.0,
+        "support_width_px": 27
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 673.532,
+        "y": 1830.149,
+        "z": 0.0,
+        "source_pixel": [
+          993,
+          588
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 21.958,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 673.532,
+      "y": 1830.149,
+      "z": 0.0,
+      "source_pixel": [
+        993,
+        588
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 21.958,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
+  }
+]

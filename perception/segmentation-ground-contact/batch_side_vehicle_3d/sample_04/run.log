@@ -1,0 +1,168 @@
+======
+Loading NuScenes tables for version v1.0-mini...
+23 category,
+8 attribute,
+4 visibility,
+911 instance,
+12 sensor,
+120 calibrated_sensor,
+31206 ego_pose,
+8 log,
+10 scene,
+404 sample,
+31206 sample_data,
+18538 sample_annotation,
+4 map,
+Done loading in 0.266 seconds.
+======
+Reverse indexing ...
+Done reverse indexing in 0.0 seconds.
+======
+Image:
+/home/kim/datasets/nuScenes/samples/CAM_FRONT_RIGHT/n015-2018-10-08-15-36-50+0800__CAM_FRONT_RIGHT__1538984248920339.jpg
+Camera channel: CAM_FRONT_RIGHT
+Ground plane (global z): 0.0
+Image size: (1600, 900)
+Loading RF-DETR...
+[2026-07-13 08:37:21] [INFO] rf-detr - File /home/kim/.roboflow/models/rf-detr-seg-medium.pt already exists with correct MD5 hash.
+[2026-07-13 08:37:21] [WARNING] rf-detr - Using a different number of positional encodings than DINOv2, which means we're not loading DINOv2 backbone weights. This is not a problem if finetuning a pretrained RF-DETR model.
+[2026-07-13 08:37:21] [WARNING] rf-detr - Using patch size 12 instead of 14, which means we're not loading DINOv2 backbone weights. This is not a problem if finetuning a pretrained RF-DETR model.
+[2026-07-13 08:37:22] [INFO] rf-detr - File /home/kim/.roboflow/models/rf-detr-seg-medium.pt already exists with correct MD5 hash.
+[2026-07-13 08:37:22] [WARNING] rf-detr - load_pretrain_weights: checkpoint lacks args.num_queries / args.group_detr; falling back to flat slice. With group_detr=13 this may scramble per-group query structure if the checkpoint was trained with group_detr > 1.
+[2026-07-13 08:37:22] [WARNING] rf-detr - Pretrained weights at '/home/kim/.roboflow/models/rf-detr-seg-medium.pt' loaded only partially — this typically produces lower accuracy. 1 model parameter(s) not in checkpoint (left at random init): [_kp_active_mask]. Check that the model configuration (encoder, hidden_dim, out_feature_indexes, projector_scale, ...) matches the architecture the checkpoint was trained with.
+[2026-07-13 08:37:22] [WARNING] rf-detr - Model is not optimized for inference. Latency may be higher than expected. For full GPU throughput (e.g. ~8x on T4 via FP16 Tensor Cores), call model.optimize_for_inference(dtype=torch.float16).
+Inference...
+<class 'supervision.detection.core.Detections'>
+Detections(xyxy=array([[3.2882422e+02, 4.5801239e+02, 9.8344232e+02, 7.8793616e+02],
+       [1.1565208e+00, 4.7327792e+02, 4.2432523e+02, 7.1273022e+02],
+       [1.2727377e+03, 4.7946494e+02, 1.5078668e+03, 6.3562787e+02],
+       [1.0071111e+03, 4.5931729e+02, 1.2784917e+03, 6.1924646e+02],
+       [4.7016626e+02, 4.7533148e+02, 5.8947089e+02, 5.5025287e+02],
+       [4.2739606e+02, 4.8656662e+02, 5.1589362e+02, 5.3929456e+02],
+       [9.0826276e+02, 4.6610065e+02, 1.0438676e+03, 5.9519733e+02]],
+      dtype=float32), mask=array([[[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]],
+
+       [[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]],
+
+       [[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]],
+
+       ...,
+
+       [[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]],
+
+       [[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]],
+
+       [[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]]],
+      shape=(7, 900, 1600)), confidence=array([0.95775247, 0.95513624, 0.9430005 , 0.9379271 , 0.85471004,
+       0.85435694, 0.8327248 ], dtype=float32), class_id=array([3, 3, 3, 3, 3, 3, 3]), tracker_id=None, data={'source_shape': array([[ 900, 1600],
+       [ 900, 1600],
+       [ 900, 1600],
+       [ 900, 1600],
+       [ 900, 1600],
+       [ 900, 1600],
+       [ 900, 1600]]), 'class_name': array(['car', 'car', 'car', 'car', 'car', 'car', 'car'], dtype=object)}, metadata={'source_image': array([[[146, 151, 155],
+        [151, 156, 160],
+        [158, 163, 167],
+        ...,
+        [142, 142, 132],
+        [153, 150, 141],
+        [158, 155, 146]],
+
+       [[186, 191, 195],
+        [186, 191, 195],
+        [185, 190, 194],
+        ...,
+        [124, 124, 114],
+        [134, 131, 122],
+        [138, 135, 126]],
+
+       [[172, 177, 181],
+        [173, 178, 182],
+        [174, 179, 183],
+        ...,
+        [102, 102,  92],
+        [108, 108,  98],
+        [112, 112, 102]],
+
+       ...,
+
+       [[104, 100,  99],
+        [103,  99,  98],
+        [101,  97,  96],
+        ...,
+        [ 73,  71,  58],
+        [ 75,  71,  59],
+        [ 75,  71,  59]],
+
+       [[104, 100,  99],
+        [103,  99,  98],
+        [101,  97,  96],
+        ...,
+        [ 73,  71,  58],
+        [ 75,  71,  59],
+        [ 75,  71,  59]],
+
+       [[104, 100,  99],
+        [103,  99,  98],
+        [101,  97,  96],
+        ...,
+        [ 73,  71,  58],
+        [ 75,  71,  59],
+        [ 75,  71,  59]]], shape=(900, 1600, 3), dtype=uint8)})
+Visualization...
+Extracting bottom pixels...
+Object 0: 1 contact candidate(s) [{'x': 659, 'y': 784, 'score': 1.0, 'support_width_px': 60}]
+Ego-nearest ground contact: {'x': 667.026, 'y': 1817.535, 'z': 0.0, 'source_pixel': [659, 784], 'score': 1.0, 'distance_to_ego_m': 8.413, 'is_nearest_to_ego': True}
+Object 1: 1 contact candidate(s) [{'x': 36, 'y': 711, 'score': 1.0, 'support_width_px': 53}]
+Ego-nearest ground contact: {'x': 662.261, 'y': 1822.069, 'z': 0.0, 'source_pixel': [36, 711], 'score': 1.0, 'distance_to_ego_m': 13.856, 'is_nearest_to_ego': True}
+Object 2: 1 contact candidate(s) [{'x': 1488, 'y': 636, 'score': 1.0, 'support_width_px': 27}]
+Ego-nearest ground contact: {'x': 675.384, 'y': 1821.251, 'z': 0.0, 'source_pixel': [1488, 636], 'score': 1.0, 'distance_to_ego_m': 14.63, 'is_nearest_to_ego': True}
+Object 3: 1 contact candidate(s) [{'x': 1192, 'y': 618, 'score': 1.0, 'support_width_px': 5}]
+Ego-nearest ground contact: {'x': 673.853, 'y': 1824.211, 'z': 0.0, 'source_pixel': [1192, 618], 'score': 1.0, 'distance_to_ego_m': 16.489, 'is_nearest_to_ego': True}
+Object 4: 1 contact candidate(s) [{'x': 482, 'y': 549, 'score': 1.0, 'support_width_px': 19}]
+Ego-nearest ground contact: {'x': 663.759, 'y': 1862.464, 'z': 0.0, 'source_pixel': [482, 549], 'score': 1.0, 'distance_to_ego_m': 53.452, 'is_nearest_to_ego': True}
+Object 5: 1 contact candidate(s) [{'x': 447, 'y': 537, 'score': 1.0, 'support_width_px': 41}]
+Ego-nearest ground contact: {'x': 660.301, 'y': 1889.65, 'z': 0.0, 'source_pixel': [447, 537], 'score': 1.0, 'distance_to_ego_m': 80.822, 'is_nearest_to_ego': True}
+Object 6: 1 contact candidate(s) [{'x': 993, 'y': 588, 'score': 1.0, 'support_width_px': 27}]
+Ego-nearest ground contact: {'x': 673.532, 'y': 1830.149, 'z': 0.0, 'source_pixel': [993, 588], 'score': 1.0, 'distance_to_ego_m': 21.958, 'is_nearest_to_ego': True}
+====================
+Saved:
+batch_side_vehicle_3d/sample_04/rfdetr_bottom_envelope.jpg
+batch_side_vehicle_3d/sample_04/rfdetr_ground_contacts.json
+====================

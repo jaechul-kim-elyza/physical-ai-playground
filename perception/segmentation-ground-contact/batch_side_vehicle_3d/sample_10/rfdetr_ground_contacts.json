@@ -1,0 +1,200 @@
+[
+  {
+    "object_id": 0,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.9360939264297485,
+    "ground_contacts": [
+      {
+        "x": 94,
+        "y": 531,
+        "score": 1.0,
+        "support_width_px": 5
+      },
+      {
+        "x": 154,
+        "y": 529,
+        "score": 0.92,
+        "support_width_px": 8
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1293.972,
+        "y": 1097.09,
+        "z": 0.0,
+        "source_pixel": [
+          94,
+          531
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 62.641,
+        "is_nearest_to_ego": true
+      },
+      {
+        "x": 1295.885,
+        "y": 1098.398,
+        "z": 0.0,
+        "source_pixel": [
+          154,
+          529
+        ],
+        "score": 0.92,
+        "distance_to_ego_m": 63.218,
+        "is_nearest_to_ego": false
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1293.972,
+      "y": 1097.09,
+      "z": 0.0,
+      "source_pixel": [
+        94,
+        531
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 62.641,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": {
+      "frame": "global",
+      "center_xyz": [
+        1294.667696,
+        1098.656273,
+        1.2
+      ],
+      "size_lwh_m": [
+        6.75,
+        1.8,
+        2.4
+      ],
+      "yaw_rad": 0.5997,
+      "wheelbase_observed_m": 2.317,
+      "dimension_source": "class_prior",
+      "side_anchor": "visible_wheel_line_shifted_away_from_ego",
+      "visible_wheel_line_midpoint_xy": [
+        1294.928,
+        1097.744
+      ],
+      "segmentation_longitudinal_offset_m": 0.3,
+      "segmentation_fit": {
+        "method": "projected_3d_bounds_enclose_mask",
+        "contour_coverage": 0.3165
+      }
+    }
+  },
+  {
+    "object_id": 1,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.9179374575614929,
+    "ground_contacts": [
+      {
+        "x": 599,
+        "y": 480,
+        "score": 1.0,
+        "support_width_px": 15
+      }
+    ],
+    "ground_contacts_global": [],
+    "ego_nearest_ground_contact": null,
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 2,
+    "class_id": 10,
+    "class_name": "traffic light",
+    "detection_confidence": 0.8262130618095398,
+    "ground_contacts": [
+      {
+        "x": 784,
+        "y": 194,
+        "score": 1.0,
+        "support_width_px": 30
+      }
+    ],
+    "ground_contacts_global": [],
+    "ego_nearest_ground_contact": null,
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 3,
+    "class_id": 10,
+    "class_name": "traffic light",
+    "detection_confidence": 0.8244611620903015,
+    "ground_contacts": [
+      {
+        "x": 970,
+        "y": 202,
+        "score": 1.0,
+        "support_width_px": 22
+      }
+    ],
+    "ground_contacts_global": [],
+    "ego_nearest_ground_contact": null,
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 4,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.6932999491691589,
+    "ground_contacts": [
+      {
+        "x": 815,
+        "y": 464,
+        "score": 1.0,
+        "support_width_px": 25
+      },
+      {
+        "x": 853,
+        "y": 464,
+        "score": 1.0,
+        "support_width_px": 21
+      },
+      {
+        "x": 900,
+        "y": 462,
+        "score": 0.2,
+        "support_width_px": 14
+      }
+    ],
+    "ground_contacts_global": [],
+    "ego_nearest_ground_contact": null,
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 5,
+    "class_id": 8,
+    "class_name": "truck",
+    "detection_confidence": 0.6637232899665833,
+    "ground_contacts": [
+      {
+        "x": 1059,
+        "y": 458,
+        "score": 1.0,
+        "support_width_px": 89
+      }
+    ],
+    "ground_contacts_global": [],
+    "ego_nearest_ground_contact": null,
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 6,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.5502005219459534,
+    "ground_contacts": [
+      {
+        "x": 1187,
+        "y": 454,
+        "score": 1.0,
+        "support_width_px": 37
+      }
+    ],
+    "ground_contacts_global": [],
+    "ego_nearest_ground_contact": null,
+    "estimated_3d_box": null
+  }
+]

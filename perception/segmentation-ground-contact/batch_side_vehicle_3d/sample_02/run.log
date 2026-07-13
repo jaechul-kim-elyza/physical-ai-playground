@@ -1,0 +1,101 @@
+======
+Loading NuScenes tables for version v1.0-mini...
+23 category,
+8 attribute,
+4 visibility,
+911 instance,
+12 sensor,
+120 calibrated_sensor,
+31206 ego_pose,
+8 log,
+10 scene,
+404 sample,
+31206 sample_data,
+18538 sample_annotation,
+4 map,
+Done loading in 0.247 seconds.
+======
+Reverse indexing ...
+Done reverse indexing in 0.1 seconds.
+======
+Image:
+/home/kim/datasets/nuScenes/samples/CAM_BACK_RIGHT/n015-2018-10-02-10-50-40+0800__CAM_BACK_RIGHT__1538448752527893.jpg
+Camera channel: CAM_BACK_RIGHT
+Ground plane (global z): 0.0
+Image size: (1600, 900)
+Loading RF-DETR...
+[2026-07-13 08:37:04] [INFO] rf-detr - File /home/kim/.roboflow/models/rf-detr-seg-medium.pt already exists with correct MD5 hash.
+[2026-07-13 08:37:04] [WARNING] rf-detr - Using a different number of positional encodings than DINOv2, which means we're not loading DINOv2 backbone weights. This is not a problem if finetuning a pretrained RF-DETR model.
+[2026-07-13 08:37:04] [WARNING] rf-detr - Using patch size 12 instead of 14, which means we're not loading DINOv2 backbone weights. This is not a problem if finetuning a pretrained RF-DETR model.
+[2026-07-13 08:37:04] [INFO] rf-detr - File /home/kim/.roboflow/models/rf-detr-seg-medium.pt already exists with correct MD5 hash.
+[2026-07-13 08:37:05] [WARNING] rf-detr - load_pretrain_weights: checkpoint lacks args.num_queries / args.group_detr; falling back to flat slice. With group_detr=13 this may scramble per-group query structure if the checkpoint was trained with group_detr > 1.
+[2026-07-13 08:37:05] [WARNING] rf-detr - Pretrained weights at '/home/kim/.roboflow/models/rf-detr-seg-medium.pt' loaded only partially — this typically produces lower accuracy. 1 model parameter(s) not in checkpoint (left at random init): [_kp_active_mask]. Check that the model configuration (encoder, hidden_dim, out_feature_indexes, projector_scale, ...) matches the architecture the checkpoint was trained with.
+[2026-07-13 08:37:05] [WARNING] rf-detr - Model is not optimized for inference. Latency may be higher than expected. For full GPU throughput (e.g. ~8x on T4 via FP16 Tensor Cores), call model.optimize_for_inference(dtype=torch.float16).
+Inference...
+<class 'supervision.detection.core.Detections'>
+Detections(xyxy=array([[ 185.29811,  464.2105 , 1030.3481 ,  823.62683]], dtype=float32), mask=array([[[False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        ...,
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False],
+        [False, False, False, ..., False, False, False]]],
+      shape=(1, 900, 1600)), confidence=array([0.90873396], dtype=float32), class_id=array([3]), tracker_id=None, data={'source_shape': array([[ 900, 1600]]), 'class_name': array(['car'], dtype=object)}, metadata={'source_image': array([[[177, 186, 203],
+        [177, 186, 203],
+        [177, 186, 203],
+        ...,
+        [ 47,  53,  51],
+        [ 45,  51,  49],
+        [ 43,  49,  47]],
+
+       [[177, 186, 203],
+        [177, 186, 203],
+        [177, 186, 203],
+        ...,
+        [ 46,  52,  50],
+        [ 44,  50,  48],
+        [ 42,  48,  46]],
+
+       [[177, 186, 203],
+        [177, 186, 203],
+        [177, 186, 203],
+        ...,
+        [ 43,  49,  47],
+        [ 42,  48,  46],
+        [ 41,  47,  45]],
+
+       ...,
+
+       [[ 52,  50,  38],
+        [ 95,  93,  81],
+        [ 91,  89,  77],
+        ...,
+        [141, 140, 135],
+        [139, 139, 131],
+        [138, 138, 130]],
+
+       [[ 48,  46,  34],
+        [ 92,  90,  78],
+        [ 92,  90,  78],
+        ...,
+        [137, 136, 131],
+        [134, 134, 126],
+        [133, 133, 125]],
+
+       [[ 44,  42,  30],
+        [ 91,  89,  77],
+        [ 93,  91,  79],
+        ...,
+        [140, 139, 134],
+        [138, 138, 130],
+        [137, 137, 129]]], shape=(900, 1600, 3), dtype=uint8)})
+Visualization...
+Extracting bottom pixels...
+Object 0: 2 contact candidate(s) [{'x': 812, 'y': 819, 'score': 1.0, 'support_width_px': 13}, {'x': 317, 'y': 784, 'score': 0.708, 'support_width_px': 17}]
+Estimated 3D box: {'frame': 'global', 'center_xyz': [1813.595779, 2565.054872, 0.903544], 'size_lwh_m': [4.851, 1.8, 1.807], 'yaw_rad': 1.6229, 'wheelbase_observed_m': 3.013, 'dimension_source': 'class_prior', 'side_anchor': 'visible_wheel_line_shifted_away_from_ego', 'visible_wheel_line_midpoint_xy': [1812.697, 2565.008], 'segmentation_longitudinal_offset_m': 0.0, 'segmentation_fit': {'method': 'projected_3d_bounds_enclose_mask', 'contour_coverage': 1.0}}
+Ego-nearest ground contact: {'x': 1812.775, 'y': 2563.503, 'z': 0.0, 'source_pixel': [812, 819], 'score': 1.0, 'distance_to_ego_m': 6.638, 'is_nearest_to_ego': True}
+====================
+Saved:
+batch_side_vehicle_3d/sample_02/rfdetr_bottom_envelope.jpg
+batch_side_vehicle_3d/sample_02/rfdetr_ground_contacts.json
+====================

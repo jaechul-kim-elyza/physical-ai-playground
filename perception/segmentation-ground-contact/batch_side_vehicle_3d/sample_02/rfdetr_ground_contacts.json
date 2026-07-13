@@ -1,0 +1,86 @@
+[
+  {
+    "object_id": 0,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.9087339639663696,
+    "ground_contacts": [
+      {
+        "x": 812,
+        "y": 819,
+        "score": 1.0,
+        "support_width_px": 13
+      },
+      {
+        "x": 317,
+        "y": 784,
+        "score": 0.708,
+        "support_width_px": 17
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1812.775,
+        "y": 2563.503,
+        "z": 0.0,
+        "source_pixel": [
+          812,
+          819
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 6.638,
+        "is_nearest_to_ego": true
+      },
+      {
+        "x": 1812.618,
+        "y": 2566.512,
+        "z": 0.0,
+        "source_pixel": [
+          317,
+          784
+        ],
+        "score": 0.708,
+        "distance_to_ego_m": 8.421,
+        "is_nearest_to_ego": false
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1812.775,
+      "y": 2563.503,
+      "z": 0.0,
+      "source_pixel": [
+        812,
+        819
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 6.638,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": {
+      "frame": "global",
+      "center_xyz": [
+        1813.595779,
+        2565.054872,
+        0.903544
+      ],
+      "size_lwh_m": [
+        4.851,
+        1.8,
+        1.807
+      ],
+      "yaw_rad": 1.6229,
+      "wheelbase_observed_m": 3.013,
+      "dimension_source": "class_prior",
+      "side_anchor": "visible_wheel_line_shifted_away_from_ego",
+      "visible_wheel_line_midpoint_xy": [
+        1812.697,
+        2565.008
+      ],
+      "segmentation_longitudinal_offset_m": 0.0,
+      "segmentation_fit": {
+        "method": "projected_3d_bounds_enclose_mask",
+        "contour_coverage": 1.0
+      }
+    }
+  }
+]

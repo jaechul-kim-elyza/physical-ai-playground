@@ -1,0 +1,209 @@
+[
+  {
+    "object_id": 0,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.9538913369178772,
+    "ground_contacts": [
+      {
+        "x": 636,
+        "y": 779,
+        "score": 1.0,
+        "support_width_px": 16
+      },
+      {
+        "x": 170,
+        "y": 761,
+        "score": 0.788,
+        "support_width_px": 11
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1314.554,
+        "y": 904.776,
+        "z": 0.0,
+        "source_pixel": [
+          636,
+          779
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 6.911,
+        "is_nearest_to_ego": true
+      },
+      {
+        "x": 1313.751,
+        "y": 902.934,
+        "z": 0.0,
+        "source_pixel": [
+          170,
+          761
+        ],
+        "score": 0.788,
+        "distance_to_ego_m": 7.683,
+        "is_nearest_to_ego": false
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1314.554,
+      "y": 904.776,
+      "z": 0.0,
+      "source_pixel": [
+        636,
+        779
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 6.911,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": {
+      "frame": "global",
+      "center_xyz": [
+        1313.327988,
+        904.214659,
+        0.579038
+      ],
+      "size_lwh_m": [
+        3.752,
+        1.8,
+        1.158
+      ],
+      "yaw_rad": -1.9819,
+      "wheelbase_observed_m": 2.009,
+      "dimension_source": "class_prior",
+      "side_anchor": "visible_wheel_line_shifted_away_from_ego",
+      "visible_wheel_line_midpoint_xy": [
+        1314.153,
+        903.855
+      ],
+      "segmentation_longitudinal_offset_m": 0.0,
+      "segmentation_fit": {
+        "method": "projected_3d_bounds_enclose_mask",
+        "contour_coverage": 1.0
+      }
+    }
+  },
+  {
+    "object_id": 1,
+    "class_id": 6,
+    "class_name": "bus",
+    "detection_confidence": 0.9056858420372009,
+    "ground_contacts": [
+      {
+        "x": 1177,
+        "y": 590,
+        "score": 1.0,
+        "support_width_px": 3
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1307.968,
+        "y": 913.144,
+        "z": 0.0,
+        "source_pixel": [
+          1177,
+          590
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 16.379,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1307.968,
+      "y": 913.144,
+      "z": 0.0,
+      "source_pixel": [
+        1177,
+        590
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 16.379,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 2,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.8573144674301147,
+    "ground_contacts": [
+      {
+        "x": 763,
+        "y": 565,
+        "score": 1.0,
+        "support_width_px": 18
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1304.895,
+        "y": 909.13,
+        "z": 0.0,
+        "source_pixel": [
+          763,
+          565
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 17.348,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1304.895,
+      "y": 909.13,
+      "z": 0.0,
+      "source_pixel": [
+        763,
+        565
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 17.348,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 3,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.782288670539856,
+    "ground_contacts": [
+      {
+        "x": 1369,
+        "y": 615,
+        "score": 1.0,
+        "support_width_px": 45
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1310.26,
+        "y": 913.696,
+        "z": 0.0,
+        "source_pixel": [
+          1369,
+          615
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 14.922,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1310.26,
+      "y": 913.696,
+      "z": 0.0,
+      "source_pixel": [
+        1369,
+        615
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 14.922,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
+  }
+]

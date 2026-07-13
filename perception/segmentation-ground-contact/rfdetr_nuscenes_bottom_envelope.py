@@ -6,10 +6,388 @@ from PIL import Image
 import cv2
 
 from nuscenes.nuscenes import NuScenes
+from pyquaternion import Quaternion
 
 from rfdetr import RFDETRSegMedium
 
 import supervision as sv
+
+
+# Dimensions are priors in metres, not measurements from the image.  They
+# resolve the scale ambiguity of a single camera after contact points anchor
+# the object to the ground plane.
+VEHICLE_SIZE_PRIORS_LWH = {
+    "car": (4.5, 1.8, 1.6),
+    "truck": (7.0, 2.5, 3.0),
+    "bus": (11.0, 2.6, 3.2),
+}
+
+
+def camera_to_global_transform(nusc: NuScenes, cam_data: dict) -> tuple[np.ndarray, np.ndarray]:
+    """Return rotation and origin that transform a camera point into global coordinates."""
+    calibrated_sensor = nusc.get(
+        "calibrated_sensor", cam_data["calibrated_sensor_token"]
+    )
+    ego_pose = nusc.get("ego_pose", cam_data["ego_pose_token"])
+
+    rotation_ego_camera = Quaternion(calibrated_sensor["rotation"]).rotation_matrix
+    translation_ego_camera = np.asarray(calibrated_sensor["translation"], dtype=float)
+    rotation_global_ego = Quaternion(ego_pose["rotation"]).rotation_matrix
+    translation_global_ego = np.asarray(ego_pose["translation"], dtype=float)
+
+    rotation_global_camera = rotation_global_ego @ rotation_ego_camera
+    origin_global_camera = (
+        rotation_global_ego @ translation_ego_camera + translation_global_ego
+    )
+    return rotation_global_camera, origin_global_camera
+
+
+def contacts_to_ground_global(
+    contacts: list[dict],
+    camera_intrinsic: np.ndarray,
+    rotation_global_camera: np.ndarray,
+    origin_global_camera: np.ndarray,
+    ground_z: float,
+) -> list[dict]:
+    """Intersect contact-pixel rays with a horizontal ground plane in global frame."""
+    inverse_intrinsic = np.linalg.inv(camera_intrinsic)
+    points_global = []
+
+    for contact in contacts:
+        ray_camera = inverse_intrinsic @ np.array(
+            [contact["x"], contact["y"], 1.0], dtype=float
+        )
+        ray_global = rotation_global_camera @ ray_camera
+        if abs(ray_global[2]) < 1e-8:
+            continue
+
+        distance = (ground_z - origin_global_camera[2]) / ray_global[2]
+        if distance <= 0:
+            continue
+
+        point = origin_global_camera + distance * ray_global
+        points_global.append({
+            "x": round(float(point[0]), 3),
+            "y": round(float(point[1]), 3),
+            "z": round(float(point[2]), 3),
+            "source_pixel": [contact["x"], contact["y"]],
+            "score": contact["score"],
+        })
+    return points_global
+
+
+def mark_ego_nearest_contact(
+    contacts_global: list[dict], ego_origin_global: np.ndarray
+) -> dict | None:
+    """Mark and return the visible ground contact nearest to the ego vehicle."""
+    if not contacts_global:
+        return None
+
+    ego_xy = np.asarray(ego_origin_global[:2], dtype=float)
+    for contact in contacts_global:
+        contact_xy = np.array([contact["x"], contact["y"]], dtype=float)
+        contact["distance_to_ego_m"] = round(
+            float(np.linalg.norm(contact_xy - ego_xy)), 3
+        )
+
+    nearest_index = min(
+        range(len(contacts_global)),
+        key=lambda index: contacts_global[index]["distance_to_ego_m"],
+    )
+    for index, contact in enumerate(contacts_global):
+        contact["is_nearest_to_ego"] = index == nearest_index
+    return contacts_global[nearest_index]
+
+
+def estimate_vehicle_3d_box(
+    contacts_global: list[dict],
+    class_name: str | None,
+    ground_z: float,
+    ego_origin_global: np.ndarray,
+) -> dict | None:
+    """Estimate a vehicle box from visible wheel contacts and a size prior.
+
+    The widest pair of ground contacts is treated as the front/rear wheel
+    axis.  In a side view this wheel line belongs to the vehicle side visible
+    to the ego camera, not to its lateral centre line.  The box is therefore
+    shifted by half its width *away* from ego, anchoring its closest side to
+    the observed contact line.  Metric dimensions remain class priors because
+    one image cannot independently determine a vehicle's true scale.
+    """
+    if class_name not in VEHICLE_SIZE_PRIORS_LWH or len(contacts_global) < 2:
+        return None
+
+    xy = np.asarray([[point["x"], point["y"]] for point in contacts_global])
+    distances = np.linalg.norm(xy[:, None, :] - xy[None, :, :], axis=2)
+    first, second = np.unravel_index(np.argmax(distances), distances.shape)
+    wheel_axis = xy[second] - xy[first]
+    wheelbase_observed = float(np.linalg.norm(wheel_axis))
+    if wheelbase_observed < 0.2:
+        return None
+
+    length, width, height = VEHICLE_SIZE_PRIORS_LWH[class_name]
+    visible_wheel_line_midpoint = (xy[first] + xy[second]) / 2
+    axis_unit = wheel_axis / wheelbase_observed
+    # Remove the length-axis component: this leaves the ego direction that is
+    # perpendicular to the observed wheel line.  It identifies which side of
+    # the vehicle is closest to the ego vehicle.
+    ego_vector = np.asarray(ego_origin_global[:2]) - visible_wheel_line_midpoint
+    ego_side_vector = ego_vector - np.dot(ego_vector, axis_unit) * axis_unit
+    ego_side_distance = float(np.linalg.norm(ego_side_vector))
+    if ego_side_distance < 0.05:
+        # Degenerate frontal/rear view: preserve the old centre-line estimate
+        # rather than applying an arbitrary lateral shift.
+        ground_center = visible_wheel_line_midpoint
+        side_anchor_used = False
+    else:
+        direction_toward_ego = ego_side_vector / ego_side_distance
+        ground_center = visible_wheel_line_midpoint - direction_toward_ego * width / 2
+        side_anchor_used = True
+    yaw = float(np.arctan2(wheel_axis[1], wheel_axis[0]))
+    return {
+        "frame": "global",
+        "center_xyz": [
+            round(float(ground_center[0]), 3),
+            round(float(ground_center[1]), 3),
+            round(float(ground_z + height / 2), 3),
+        ],
+        "size_lwh_m": [length, width, height],
+        "yaw_rad": round(yaw, 4),
+        "wheelbase_observed_m": round(wheelbase_observed, 3),
+        "dimension_source": "class_prior",
+        "side_anchor": (
+            "visible_wheel_line_shifted_away_from_ego"
+            if side_anchor_used else "center_line_fallback"
+        ),
+        "visible_wheel_line_midpoint_xy": [
+            round(float(visible_wheel_line_midpoint[0]), 3),
+            round(float(visible_wheel_line_midpoint[1]), 3),
+        ],
+    }
+
+
+def project_3d_box_to_image(
+    box: dict,
+    camera_intrinsic: np.ndarray,
+    rotation_global_camera: np.ndarray,
+    origin_global_camera: np.ndarray,
+) -> np.ndarray | None:
+    """Project global-frame 3D box corners into the current camera image."""
+    length, width, height = box["size_lwh_m"]
+    center = np.asarray(box["center_xyz"], dtype=float)
+    yaw = box["yaw_rad"]
+
+    # First four corners are on the ground; the last four are their top-face
+    # counterparts.  The vehicle length axis follows its estimated yaw.
+    local_corners = np.array([
+        [length / 2, width / 2, -height / 2],
+        [length / 2, -width / 2, -height / 2],
+        [-length / 2, -width / 2, -height / 2],
+        [-length / 2, width / 2, -height / 2],
+        [length / 2, width / 2, height / 2],
+        [length / 2, -width / 2, height / 2],
+        [-length / 2, -width / 2, height / 2],
+        [-length / 2, width / 2, height / 2],
+    ])
+    rotation_z = np.array([
+        [np.cos(yaw), -np.sin(yaw), 0.0],
+        [np.sin(yaw), np.cos(yaw), 0.0],
+        [0.0, 0.0, 1.0],
+    ])
+    corners_global = (rotation_z @ local_corners.T).T + center
+
+    # rotation_global_camera transforms camera -> global, so transpose it for
+    # global -> camera.  A box behind the camera must not be drawn.
+    corners_camera = (
+        rotation_global_camera.T @ (corners_global - origin_global_camera).T
+    ).T
+    if np.any(corners_camera[:, 2] <= 0.1):
+        return None
+
+    projected = (camera_intrinsic @ corners_camera.T).T
+    return projected[:, :2] / projected[:, 2:3]
+
+
+def box_with_dimensions_anchored_to_near_side(
+    box: dict,
+    dimensions_lwh: np.ndarray,
+    ego_origin_global: np.ndarray,
+    longitudinal_offset_m: float = 0.0,
+) -> dict:
+    """Resize a box while preserving its visible wheel-line side anchor."""
+    length, width, height = [float(value) for value in dimensions_lwh]
+    resized = dict(box)
+    resized["size_lwh_m"] = [length, width, height]
+
+    ground_z = box["center_xyz"][2] - box["size_lwh_m"][2] / 2
+    midpoint = np.asarray(box["visible_wheel_line_midpoint_xy"], dtype=float)
+    axis = np.array([np.cos(box["yaw_rad"]), np.sin(box["yaw_rad"])])
+    ego_vector = np.asarray(ego_origin_global[:2]) - midpoint
+    ego_side = ego_vector - np.dot(ego_vector, axis) * axis
+    ego_side_norm = np.linalg.norm(ego_side)
+
+    if box["side_anchor"].startswith("visible_wheel_line") and ego_side_norm >= 0.05:
+        center_xy = midpoint - ego_side / ego_side_norm * width / 2
+    else:
+        center_xy = midpoint
+    center_xy = center_xy + axis * longitudinal_offset_m
+    resized["center_xyz"] = [
+        round(float(center_xy[0]), 6),
+        round(float(center_xy[1]), 6),
+        round(float(ground_z + height / 2), 6),
+    ]
+    resized["segmentation_longitudinal_offset_m"] = round(
+        float(longitudinal_offset_m), 3
+    )
+    return resized
+
+
+def segmentation_coverage_of_projected_box(
+    mask_contour: np.ndarray,
+    projected_corners: np.ndarray | None,
+) -> float:
+    """Fraction of segmentation contour enclosed by projected 3D-box bounds."""
+    if projected_corners is None or mask_contour.size == 0:
+        return 0.0
+    points = mask_contour.reshape(-1, 2)
+    # A few hundred contour points retain the complete silhouette while making
+    # the dimension search inexpensive for large masks.
+    stride = max(1, len(points) // 600)
+    points = points[::stride]
+    minimum = projected_corners.min(axis=0)
+    maximum = projected_corners.max(axis=0)
+    inside = np.logical_and.reduce((
+        points[:, 0] >= minimum[0],
+        points[:, 0] <= maximum[0],
+        points[:, 1] >= minimum[1],
+        points[:, 1] <= maximum[1],
+    )).sum()
+    return inside / len(points)
+
+
+def fit_3d_box_to_segmentation(
+    box: dict | None,
+    mask: np.ndarray,
+    camera_intrinsic: np.ndarray,
+    rotation_global_camera: np.ndarray,
+    origin_global_camera: np.ndarray,
+    ego_origin_global: np.ndarray,
+) -> dict | None:
+    """Expand/shrink a 3D box until its projection tightly contains the mask.
+
+    The ground-contact pose stays fixed.  Only L/W/H are optimized, with the
+    near-side wheel-line anchor recomputed when the width changes.
+    """
+    if box is None:
+        return None
+
+    contours, _ = cv2.findContours(
+        mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE
+    )
+    if not contours:
+        return box
+    # RF-DETR masks can contain tiny disconnected speckles.  Fit the physical
+    # object component, not an isolated prediction artifact metres away from
+    # the vehicle silhouette.
+    contour = max(contours, key=cv2.contourArea)
+
+    def evaluate(candidate: dict) -> float:
+        return segmentation_coverage_of_projected_box(
+            contour,
+            project_3d_box_to_image(
+                candidate,
+                camera_intrinsic,
+                rotation_global_camera,
+                origin_global_camera,
+            ),
+        )
+
+    dimensions = np.asarray(box["size_lwh_m"], dtype=float)
+    candidate = box_with_dimensions_anchored_to_near_side(
+        box, dimensions, ego_origin_global
+    )
+    coverage = evaluate(candidate)
+
+    # Search a compact L/W/H grid rather than greedily expanding one axis.
+    # Width changes the ego-side anchor, so greedy growth can occasionally
+    # make a projection worse even though the physical box gets larger.
+    if coverage < 0.999:
+        length_scales = (1.0, 1.05, 1.10, 1.20, 1.35, 1.50)
+        width_scales = (1.0, 1.10, 1.25)
+        height_scales = (1.0, 1.05, 1.10, 1.20, 1.35, 1.50)
+        longitudinal_offsets = (-1.0, -0.6, -0.3, 0.0, 0.3, 0.6, 1.0)
+        containing_options = []
+        best_option = (coverage, dimensions, candidate, 0.0)
+        for length_scale in length_scales:
+            for width_scale in width_scales:
+                for height_scale in height_scales:
+                    for offset in longitudinal_offsets:
+                        scaled_dimensions = dimensions * np.array([
+                            length_scale, width_scale, height_scale
+                        ])
+                        scaled_box = box_with_dimensions_anchored_to_near_side(
+                            box, scaled_dimensions, ego_origin_global, offset
+                        )
+                        scaled_coverage = evaluate(scaled_box)
+                        option = (scaled_coverage, scaled_dimensions, scaled_box, offset)
+                        if scaled_coverage >= 0.999:
+                            containing_options.append(option)
+                        if scaled_coverage > best_option[0]:
+                            best_option = option
+
+        if containing_options:
+            coverage, dimensions, candidate, longitudinal_offset = min(
+                containing_options, key=lambda option: float(np.prod(option[1]))
+            )
+        else:
+            coverage, dimensions, candidate, longitudinal_offset = best_option
+    else:
+        longitudinal_offset = 0.0
+
+    # Then contract each dimension wherever coverage remains complete.  This
+    # removes spare prior-size padding and gives a tight enclosing projection.
+    for _ in range(30):
+        changed = False
+        # A side camera provides little evidence for the hidden vehicle width;
+        # retain its class prior instead of shrinking it to fit a 2-D outline.
+        for dimension_index in (0, 2):
+            shrunk = dimensions.copy()
+            shrunk[dimension_index] *= 0.98
+            shrunk_box = box_with_dimensions_anchored_to_near_side(
+                box, shrunk, ego_origin_global, longitudinal_offset
+            )
+            shrunk_coverage = evaluate(shrunk_box)
+            if shrunk_coverage >= 0.999:
+                dimensions, candidate, coverage = shrunk, shrunk_box, shrunk_coverage
+                changed = True
+        if not changed:
+            break
+
+    candidate["size_lwh_m"] = [round(float(value), 3) for value in dimensions]
+    candidate["segmentation_fit"] = {
+        "method": "projected_3d_bounds_enclose_mask",
+        "contour_coverage": round(float(coverage), 4),
+    }
+    return candidate
+
+
+def draw_3d_box(
+    image: np.ndarray,
+    projected_corners: np.ndarray | None,
+    color: tuple[int, int, int] = (0, 255, 0),
+) -> None:
+    """Draw a projected 3D box as a wireframe directly onto an RGB image."""
+    if projected_corners is None:
+        return
+
+    corners = np.rint(projected_corners).astype(np.int32)
+    edges = (
+        (0, 1), (1, 2), (2, 3), (3, 0),  # ground face
+        (4, 5), (5, 6), (6, 7), (7, 4),  # roof face
+        (0, 4), (1, 5), (2, 6), (3, 7),  # vertical edges
+    )
+    for start, end in edges:
+        cv2.line(image, tuple(corners[start]), tuple(corners[end]), color, 3)
 
 
 def bottom_envelope(mask: np.ndarray) -> np.ndarray:
@@ -179,6 +557,8 @@ DATA_ROOT = "/home/kim/datasets/nuScenes"
 # .venv/bin/python perception/segmentation-ground-contact/rfdetr_nuscenes_bottom_envelope.py
 CAMERA_CHANNEL = os.getenv("NUSCENES_CAMERA_CHANNEL", "CAM_FRONT")
 SAMPLE_TOKEN = os.getenv("NUSCENES_SAMPLE_TOKEN")
+DRAW_2D_BOXES = os.getenv("DRAW_2D_BOXES", "0") == "1"
+OUTPUT_DIR = os.getenv("OUTPUT_DIR", ".")
 
 
 nusc = NuScenes(
@@ -212,6 +592,19 @@ cam_data = nusc.get(
     cam_token
 )
 
+calibrated_sensor = nusc.get(
+    "calibrated_sensor", cam_data["calibrated_sensor_token"]
+)
+ego_pose = nusc.get("ego_pose", cam_data["ego_pose_token"])
+ego_origin_global = np.asarray(ego_pose["translation"], dtype=float)
+camera_intrinsic = np.asarray(calibrated_sensor["camera_intrinsic"], dtype=float)
+rotation_global_camera, origin_global_camera = camera_to_global_transform(
+    nusc, cam_data
+)
+# In nuScenes the ego frame is referenced to the road plane.  An environment
+# override is useful for a dataset whose map/global origin is elsewhere.
+GROUND_Z = float(os.getenv("NUSCENES_GROUND_Z", ego_pose["translation"][2]))
+
 
 img_path = os.path.join(
     DATA_ROOT,
@@ -222,6 +615,7 @@ img_path = os.path.join(
 print("Image:")
 print(img_path)
 print("Camera channel:", CAMERA_CHANNEL)
+print("Ground plane (global z):", GROUND_Z)
 
 
 image = Image.open(img_path).convert("RGB")
@@ -279,13 +673,14 @@ annotated = mask_annotator.annotate(
 )
 
 
-# bbox
-box_annotator = sv.BoxAnnotator()
-
-annotated = box_annotator.annotate(
-    scene=annotated,
-    detections=detections
-)
+# The green wireframe below is the estimated 3D box.  Keep 2D detection boxes
+# optional so they do not obscure it.
+if DRAW_2D_BOXES:
+    box_annotator = sv.BoxAnnotator()
+    annotated = box_annotator.annotate(
+        scene=annotated,
+        detections=detections
+    )
 
 
 # label
@@ -323,12 +718,50 @@ if detections.mask is not None:
             float(detections.confidence[obj_id])
             if detections.confidence is not None else None
         )
+        class_name = (
+            str(detections.data["class_name"][obj_id])
+            if "class_name" in detections.data else None
+        )
+        contacts_global = contacts_to_ground_global(
+            contacts,
+            camera_intrinsic,
+            rotation_global_camera,
+            origin_global_camera,
+            GROUND_Z,
+        )
+        ego_nearest_contact = mark_ego_nearest_contact(
+            contacts_global, ego_origin_global
+        )
+        estimated_3d_box = estimate_vehicle_3d_box(
+            contacts_global, class_name, GROUND_Z, ego_origin_global
+        )
+        estimated_3d_box = fit_3d_box_to_segmentation(
+            estimated_3d_box,
+            mask,
+            camera_intrinsic,
+            rotation_global_camera,
+            origin_global_camera,
+            ego_origin_global,
+        )
+        projected_3d_box = project_3d_box_to_image(
+            estimated_3d_box,
+            camera_intrinsic,
+            rotation_global_camera,
+            origin_global_camera,
+        ) if estimated_3d_box is not None else None
         result = {
             "object_id": obj_id,
             "class_id": class_id,
+            "class_name": class_name,
             "detection_confidence": confidence,
             # Ordered by estimated contact likelihood (score), not x position.
             "ground_contacts": contacts,
+            "ground_contacts_global": contacts_global,
+            # Representative contact: physically closest visible ground point
+            # to the ego vehicle, computed after 3D ground-plane projection.
+            "ego_nearest_ground_contact": ego_nearest_contact,
+            # Only vehicles with >= 2 visible contact points receive a box.
+            "estimated_3d_box": estimated_3d_box,
         }
         ground_contact_results.append(result)
 
@@ -337,6 +770,11 @@ if detections.mask is not None:
             f"Object {obj_id}: {len(contacts)} contact candidate(s)",
             contacts
         )
+        if estimated_3d_box is not None:
+            print("Estimated 3D box:", estimated_3d_box)
+            draw_3d_box(annotated, projected_3d_box)
+        if ego_nearest_contact is not None:
+            print("Ego-nearest ground contact:", ego_nearest_contact)
 
 
         # ==========================
@@ -374,6 +812,30 @@ if detections.mask is not None:
                 cv2.LINE_AA,
             )
 
+        # Green diamond: the candidate that is closest to the ego vehicle on
+        # the reconstructed ground plane.  This is the representative contact
+        # used when a downstream consumer needs a single point per object.
+        if ego_nearest_contact is not None:
+            nearest_point = tuple(ego_nearest_contact["source_pixel"])
+            cv2.drawMarker(
+                annotated,
+                nearest_point,
+                (0, 255, 0),
+                markerType=cv2.MARKER_DIAMOND,
+                markerSize=18,
+                thickness=2,
+            )
+            cv2.putText(
+                annotated,
+                "ego-nearest",
+                (nearest_point[0] + 7, nearest_point[1] + 18),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.4,
+                (0, 255, 0),
+                1,
+                cv2.LINE_AA,
+            )
+
 
 else:
 
@@ -385,8 +847,9 @@ else:
 # 7. Save
 # ==========================
 
-out_file = "rfdetr_bottom_envelope.jpg"
-contacts_file = "rfdetr_ground_contacts.json"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+out_file = os.path.join(OUTPUT_DIR, "rfdetr_bottom_envelope.jpg")
+contacts_file = os.path.join(OUTPUT_DIR, "rfdetr_ground_contacts.json")
 
 
 Image.fromarray(

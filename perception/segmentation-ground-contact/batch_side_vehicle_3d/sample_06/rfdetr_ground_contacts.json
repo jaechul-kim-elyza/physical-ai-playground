@@ -1,0 +1,270 @@
+[
+  {
+    "object_id": 0,
+    "class_id": 8,
+    "class_name": "truck",
+    "detection_confidence": 0.9321444034576416,
+    "ground_contacts": [
+      {
+        "x": 839,
+        "y": 612,
+        "score": 1.0,
+        "support_width_px": 52
+      },
+      {
+        "x": 749,
+        "y": 600,
+        "score": 0.76,
+        "support_width_px": 8
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1496.232,
+        "y": 1209.837,
+        "z": 0.0,
+        "source_pixel": [
+          839,
+          612
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 14.258,
+        "is_nearest_to_ego": true
+      },
+      {
+        "x": 1494.997,
+        "y": 1208.851,
+        "z": 0.0,
+        "source_pixel": [
+          749,
+          600
+        ],
+        "score": 0.76,
+        "distance_to_ego_m": 15.569,
+        "is_nearest_to_ego": false
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1496.232,
+      "y": 1209.837,
+      "z": 0.0,
+      "source_pixel": [
+        839,
+        612
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 14.258,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": {
+      "frame": "global",
+      "center_xyz": [
+        1494.053596,
+        1209.696872,
+        2.025
+      ],
+      "size_lwh_m": [
+        10.5,
+        2.5,
+        4.05
+      ],
+      "yaw_rad": -2.4678,
+      "wheelbase_observed_m": 1.58,
+      "dimension_source": "class_prior",
+      "side_anchor": "visible_wheel_line_shifted_away_from_ego",
+      "visible_wheel_line_midpoint_xy": [
+        1495.615,
+        1209.344
+      ],
+      "segmentation_longitudinal_offset_m": 1.0,
+      "segmentation_fit": {
+        "method": "projected_3d_bounds_enclose_mask",
+        "contour_coverage": 0.847
+      }
+    }
+  },
+  {
+    "object_id": 1,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.9043917655944824,
+    "ground_contacts": [
+      {
+        "x": 96,
+        "y": 597,
+        "score": 1.0,
+        "support_width_px": 44
+      },
+      {
+        "x": 110,
+        "y": 596,
+        "score": 0.869,
+        "support_width_px": 2
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1494.242,
+        "y": 1201.053,
+        "z": 0.0,
+        "source_pixel": [
+          96,
+          597
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 18.811,
+        "is_nearest_to_ego": true
+      },
+      {
+        "x": 1494.131,
+        "y": 1201.157,
+        "z": 0.0,
+        "source_pixel": [
+          110,
+          596
+        ],
+        "score": 0.869,
+        "distance_to_ego_m": 18.854,
+        "is_nearest_to_ego": false
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1494.242,
+      "y": 1201.053,
+      "z": 0.0,
+      "source_pixel": [
+        96,
+        597
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 18.811,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
+  },
+  {
+    "object_id": 2,
+    "class_id": 3,
+    "class_name": "car",
+    "detection_confidence": 0.8878914713859558,
+    "ground_contacts": [
+      {
+        "x": 1163,
+        "y": 528,
+        "score": 1.0,
+        "support_width_px": 30
+      },
+      {
+        "x": 1360,
+        "y": 526,
+        "score": 0.911,
+        "support_width_px": 11
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1478.939,
+        "y": 1218.025,
+        "z": 0.0,
+        "source_pixel": [
+          1163,
+          528
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 32.403,
+        "is_nearest_to_ego": true
+      },
+      {
+        "x": 1478.492,
+        "y": 1222.947,
+        "z": 0.0,
+        "source_pixel": [
+          1360,
+          526
+        ],
+        "score": 0.911,
+        "distance_to_ego_m": 34.294,
+        "is_nearest_to_ego": false
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1478.939,
+      "y": 1218.025,
+      "z": 0.0,
+      "source_pixel": [
+        1163,
+        528
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 32.403,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": {
+      "frame": "global",
+      "center_xyz": [
+        1477.910171,
+        1219.40867,
+        1.176
+      ],
+      "size_lwh_m": [
+        5.186,
+        1.8,
+        2.352
+      ],
+      "yaw_rad": 1.6614,
+      "wheelbase_observed_m": 4.942,
+      "dimension_source": "class_prior",
+      "side_anchor": "visible_wheel_line_shifted_away_from_ego",
+      "visible_wheel_line_midpoint_xy": [
+        1478.716,
+        1220.486
+      ],
+      "segmentation_longitudinal_offset_m": -1.0,
+      "segmentation_fit": {
+        "method": "projected_3d_bounds_enclose_mask",
+        "contour_coverage": 1.0
+      }
+    }
+  },
+  {
+    "object_id": 3,
+    "class_id": 8,
+    "class_name": "truck",
+    "detection_confidence": 0.882636547088623,
+    "ground_contacts": [
+      {
+        "x": 378,
+        "y": 720,
+        "score": 1.0,
+        "support_width_px": 8
+      }
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1501.727,
+        "y": 1206.966,
+        "z": 0.0,
+        "source_pixel": [
+          378,
+          720
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 9.455,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1501.727,
+      "y": 1206.966,
+      "z": 0.0,
+      "source_pixel": [
+        378,
+        720
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 9.455,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
+  }
+]

@@ -20,7 +20,15 @@ VEHICLE_SIZE_PRIORS_LWH = {
     "car": (4.5, 1.8, 1.6),
     "truck": (7.0, 2.5, 3.0),
     "bus": (11.0, 2.6, 3.2),
+    "motorcycle": (2.1, 0.8, 1.2),
+    "bicycle": (1.8, 0.6, 1.2),
 }
+
+# Restrict this experiment to road vehicles.  COCO/RF-DETR uses these exact
+# class names for passenger vehicles, two-wheelers, and their larger variants.
+TARGET_CLASS_NAMES = frozenset({
+    "car", "truck", "bus", "motorcycle", "bicycle",
+})
 
 
 def camera_to_global_transform(nusc: NuScenes, cam_data: dict) -> tuple[np.ndarray, np.ndarray]:
@@ -646,6 +654,18 @@ detections = model.predict(
     image,
     threshold=0.5
 )
+
+if "class_name" in detections.data:
+    target_mask = np.isin(
+        detections.data["class_name"], list(TARGET_CLASS_NAMES)
+    )
+    detections = detections[target_mask]
+    print(
+        "Vehicle/two-wheeler detections:",
+        len(detections),
+    )
+else:
+    print("No class names available; keeping all detections")
 
 
 print(type(detections))

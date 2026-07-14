@@ -2,6 +2,7 @@
   {
     "object_id": 0,
     "class_id": 3,
+    "class_name": "car",
     "detection_confidence": 0.9528786540031433,
     "ground_contacts": [
       {
@@ -10,11 +11,39 @@
         "score": 1.0,
         "support_width_px": 55
       }
-    ]
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1839.785,
+        "y": 875.504,
+        "z": -0.0,
+        "source_pixel": [
+          257,
+          690
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 9.507,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1839.785,
+      "y": 875.504,
+      "z": -0.0,
+      "source_pixel": [
+        257,
+        690
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 9.507,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
   },
   {
     "object_id": 1,
     "class_id": 3,
+    "class_name": "car",
     "detection_confidence": 0.9488927125930786,
     "ground_contacts": [
       {
@@ -29,11 +58,76 @@
         "score": 0.725,
         "support_width_px": 14
       }
-    ]
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1846.043,
+        "y": 875.108,
+        "z": 0.0,
+        "source_pixel": [
+          1164,
+          766
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 7.21,
+        "is_nearest_to_ego": true
+      },
+      {
+        "x": 1843.126,
+        "y": 875.098,
+        "z": 0.0,
+        "source_pixel": [
+          654,
+          731
+        ],
+        "score": 0.725,
+        "distance_to_ego_m": 7.567,
+        "is_nearest_to_ego": false
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1846.043,
+      "y": 875.108,
+      "z": 0.0,
+      "source_pixel": [
+        1164,
+        766
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 7.21,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": {
+      "frame": "global",
+      "center_xyz": [
+        1844.580947,
+        876.002995,
+        0.84
+      ],
+      "size_lwh_m": [
+        4.631,
+        1.8,
+        1.68
+      ],
+      "yaw_rad": -3.1382,
+      "wheelbase_observed_m": 2.917,
+      "dimension_source": "class_prior",
+      "side_anchor": "visible_wheel_line_shifted_away_from_ego",
+      "visible_wheel_line_midpoint_xy": [
+        1844.584,
+        875.103
+      ],
+      "segmentation_longitudinal_offset_m": 0.0,
+      "segmentation_fit": {
+        "method": "projected_3d_bounds_enclose_mask",
+        "contour_coverage": 1.0
+      }
+    }
   },
   {
     "object_id": 2,
     "class_id": 3,
+    "class_name": "car",
     "detection_confidence": 0.8431168794631958,
     "ground_contacts": [
       {
@@ -42,11 +136,39 @@
         "score": 1.0,
         "support_width_px": 25
       }
-    ]
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1848.118,
+        "y": 875.851,
+        "z": 0.0,
+        "source_pixel": [
+          1590,
+          762
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 8.349,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1848.118,
+      "y": 875.851,
+      "z": 0.0,
+      "source_pixel": [
+        1590,
+        762
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 8.349,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
   },
   {
     "object_id": 3,
     "class_id": 1,
+    "class_name": "person",
     "detection_confidence": 0.6895812153816223,
     "ground_contacts": [
       {
@@ -55,11 +177,39 @@
         "score": 1.0,
         "support_width_px": 11
       }
-    ]
+    ],
+    "ground_contacts_global": [
+      {
+        "x": 1595.829,
+        "y": 1078.567,
+        "z": -0.0,
+        "source_pixel": [
+          81,
+          479
+        ],
+        "score": 1.0,
+        "distance_to_ego_m": 326.674,
+        "is_nearest_to_ego": true
+      }
+    ],
+    "ego_nearest_ground_contact": {
+      "x": 1595.829,
+      "y": 1078.567,
+      "z": -0.0,
+      "source_pixel": [
+        81,
+        479
+      ],
+      "score": 1.0,
+      "distance_to_ego_m": 326.674,
+      "is_nearest_to_ego": true
+    },
+    "estimated_3d_box": null
   },
   {
     "object_id": 4,
     "class_id": 1,
+    "class_name": "person",
     "detection_confidence": 0.6423989534378052,
     "ground_contacts": [
       {
@@ -68,6 +218,9 @@
         "score": 1.0,
         "support_width_px": 37
       }
-    ]
+    ],
+    "ground_contacts_global": [],
+    "ego_nearest_ground_contact": null,
+    "estimated_3d_box": null
   }
 ]

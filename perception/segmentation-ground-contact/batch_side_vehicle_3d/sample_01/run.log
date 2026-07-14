@@ -13,7 +13,7 @@ Loading NuScenes tables for version v1.0-mini...
 31206 sample_data,
 18538 sample_annotation,
 4 map,
-Done loading in 0.258 seconds.
+Done loading in 0.369 seconds.
 ======
 Reverse indexing ...
 Done reverse indexing in 0.1 seconds.
@@ -24,14 +24,15 @@ Camera channel: CAM_FRONT_LEFT
 Ground plane (global z): 0.0
 Image size: (1600, 900)
 Loading RF-DETR...
-[2026-07-13 08:36:55] [INFO] rf-detr - File /home/kim/.roboflow/models/rf-detr-seg-medium.pt already exists with correct MD5 hash.
-[2026-07-13 08:36:55] [WARNING] rf-detr - Using a different number of positional encodings than DINOv2, which means we're not loading DINOv2 backbone weights. This is not a problem if finetuning a pretrained RF-DETR model.
-[2026-07-13 08:36:55] [WARNING] rf-detr - Using patch size 12 instead of 14, which means we're not loading DINOv2 backbone weights. This is not a problem if finetuning a pretrained RF-DETR model.
-[2026-07-13 08:36:56] [INFO] rf-detr - File /home/kim/.roboflow/models/rf-detr-seg-medium.pt already exists with correct MD5 hash.
-[2026-07-13 08:36:56] [WARNING] rf-detr - load_pretrain_weights: checkpoint lacks args.num_queries / args.group_detr; falling back to flat slice. With group_detr=13 this may scramble per-group query structure if the checkpoint was trained with group_detr > 1.
-[2026-07-13 08:36:56] [WARNING] rf-detr - Pretrained weights at '/home/kim/.roboflow/models/rf-detr-seg-medium.pt' loaded only partially — this typically produces lower accuracy. 1 model parameter(s) not in checkpoint (left at random init): [_kp_active_mask]. Check that the model configuration (encoder, hidden_dim, out_feature_indexes, projector_scale, ...) matches the architecture the checkpoint was trained with.
-[2026-07-13 08:36:56] [WARNING] rf-detr - Model is not optimized for inference. Latency may be higher than expected. For full GPU throughput (e.g. ~8x on T4 via FP16 Tensor Cores), call model.optimize_for_inference(dtype=torch.float16).
+[2026-07-14 20:37:56] [INFO] rf-detr - File /home/kim/.roboflow/models/rf-detr-seg-medium.pt already exists with correct MD5 hash.
+[2026-07-14 20:37:56] [WARNING] rf-detr - Using a different number of positional encodings than DINOv2, which means we're not loading DINOv2 backbone weights. This is not a problem if finetuning a pretrained RF-DETR model.
+[2026-07-14 20:37:56] [WARNING] rf-detr - Using patch size 12 instead of 14, which means we're not loading DINOv2 backbone weights. This is not a problem if finetuning a pretrained RF-DETR model.
+[2026-07-14 20:37:56] [INFO] rf-detr - File /home/kim/.roboflow/models/rf-detr-seg-medium.pt already exists with correct MD5 hash.
+[2026-07-14 20:37:57] [WARNING] rf-detr - load_pretrain_weights: checkpoint lacks args.num_queries / args.group_detr; falling back to flat slice. With group_detr=13 this may scramble per-group query structure if the checkpoint was trained with group_detr > 1.
+[2026-07-14 20:37:57] [WARNING] rf-detr - Pretrained weights at '/home/kim/.roboflow/models/rf-detr-seg-medium.pt' loaded only partially — this typically produces lower accuracy. 1 model parameter(s) not in checkpoint (left at random init): [_kp_active_mask]. Check that the model configuration (encoder, hidden_dim, out_feature_indexes, projector_scale, ...) matches the architecture the checkpoint was trained with.
+[2026-07-14 20:37:57] [WARNING] rf-detr - Model is not optimized for inference. Latency may be higher than expected. For full GPU throughput (e.g. ~8x on T4 via FP16 Tensor Cores), call model.optimize_for_inference(dtype=torch.float16).
 Inference...
+All-class detections: 4
 <class 'supervision.detection.core.Detections'>
 Detections(xyxy=array([[1196.0382 ,  449.74207, 1565.0793 ,  618.99365],
        [ 401.44696,  319.31033, 1203.4165 ,  742.22064],
@@ -122,14 +123,24 @@ Detections(xyxy=array([[1196.0382 ,  449.74207, 1565.0793 ,  618.99365],
 Visualization...
 Extracting bottom pixels...
 Object 0: 2 contact candidate(s) [{'x': 1389, 'y': 618, 'score': 1.0, 'support_width_px': 10}, {'x': 1534, 'y': 606, 'score': 0.7, 'support_width_px': 7}]
-Estimated 3D box: {'frame': 'global', 'center_xyz': [1837.386163, 875.664394, 0.723137], 'size_lwh_m': [3.004, 1.8, 1.446], 'yaw_rad': -0.1384, 'wheelbase_observed_m': 1.885, 'dimension_source': 'class_prior', 'side_anchor': 'visible_wheel_line_shifted_away_from_ego', 'visible_wheel_line_midpoint_xy': [1837.262, 874.773], 'segmentation_longitudinal_offset_m': 0.0, 'segmentation_fit': {'method': 'projected_3d_bounds_enclose_mask', 'contour_coverage': 1.0}}
+Occlusion: {'status': 'possibly_occluded', 'reason': 'visible_face_mask_comparison', 'visible_face_coverage': 0.6783, 'other_mask_occluder_ratio': 0.0191, 'occluder_object_ids': [1], 'bbox_overlap_iou': 0.0276, 'bbox_smaller_box_overlap_fraction': 0.2869, 'bbox_overlapping_object_ids': [1, 2], 'touches_image_edge': False, 'skip_3d_face': True}
+Skipped visible 3D face due to occlusion evidence
+Segmentation-aligned polygon: vertices=368 coverage=1.0
 Ego-nearest ground contact: {'x': 1836.329, 'y': 874.903, 'z': 0.0, 'source_pixel': [1389, 618], 'score': 1.0, 'distance_to_ego_m': 13.688, 'is_nearest_to_ego': True}
 Object 1: 2 contact candidate(s) [{'x': 645, 'y': 742, 'score': 1.0, 'support_width_px': 65}, {'x': 1100, 'y': 675, 'score': 0.606, 'support_width_px': 10}]
-Estimated 3D box: {'frame': 'global', 'center_xyz': [1830.553004, 875.503564, 1.042703], 'size_lwh_m': [5.493, 2.5, 2.085], 'yaw_rad': 0.0264, 'wheelbase_observed_m': 3.299, 'dimension_source': 'class_prior', 'side_anchor': 'visible_wheel_line_shifted_away_from_ego', 'visible_wheel_line_midpoint_xy': [1830.586, 874.254], 'segmentation_longitudinal_offset_m': 0.0, 'segmentation_fit': {'method': 'projected_3d_bounds_enclose_mask', 'contour_coverage': 1.0}}
+Occlusion: {'status': 'possibly_occluded', 'reason': 'visible_face_mask_comparison', 'visible_face_coverage': 0.7495, 'other_mask_occluder_ratio': 0.0071, 'occluder_object_ids': [0, 3], 'bbox_overlap_iou': 0.0113, 'bbox_smaller_box_overlap_fraction': 1.0, 'bbox_overlapping_object_ids': [0, 3], 'touches_image_edge': False, 'skip_3d_face': True}
+Skipped visible 3D face due to occlusion evidence
+Segmentation-aligned polygon: vertices=778 coverage=1.0
 Ego-nearest ground contact: {'x': 1828.937, 'y': 874.21, 'z': 0.0, 'source_pixel': [645, 742], 'score': 1.0, 'distance_to_ego_m': 7.767, 'is_nearest_to_ego': True}
 Object 2: 1 contact candidate(s) [{'x': 1579, 'y': 574, 'score': 1.0, 'support_width_px': 29}]
+Occlusion: {'status': 'truncated', 'reason': 'no_metric_visible_face', 'bbox_overlap_iou': 0.0276, 'bbox_smaller_box_overlap_fraction': 0.2869, 'bbox_overlapping_object_ids': [0], 'touches_image_edge': True, 'skip_3d_face': True}
+Skipped visible 3D face due to occlusion evidence
+Segmentation-aligned polygon: vertices=61 coverage=1.0
 Ego-nearest ground contact: {'x': 1841.645, 'y': 875.955, 'z': 0.0, 'source_pixel': [1579, 574], 'score': 1.0, 'distance_to_ego_m': 18.859, 'is_nearest_to_ego': True}
 Object 3: 1 contact candidate(s) [{'x': 554, 'y': 482, 'score': 1.0, 'support_width_px': 21}]
+Occlusion: {'status': 'possibly_occluded', 'reason': 'no_metric_visible_face', 'bbox_overlap_iou': 0.0113, 'bbox_smaller_box_overlap_fraction': 1.0, 'bbox_overlapping_object_ids': [1], 'touches_image_edge': False, 'skip_3d_face': True}
+Skipped visible 3D face due to occlusion evidence
+Segmentation-aligned polygon: vertices=70 coverage=1.0
 Ego-nearest ground contact: {'x': 1848.678, 'y': 928.537, 'z': 0.0, 'source_pixel': [554, 482], 'score': 1.0, 'distance_to_ego_m': 65.387, 'is_nearest_to_ego': True}
 ====================
 Saved:

@@ -56,31 +56,62 @@
       "distance_to_ego_m": 6.638,
       "is_nearest_to_ego": true
     },
-    "estimated_3d_box": {
+    "occlusion": {
+      "status": "unknown",
+      "reason": "visible_face_mask_comparison",
+      "visible_face_coverage": 0.7384,
+      "other_mask_occluder_ratio": 0.0,
+      "occluder_object_ids": [],
+      "bbox_overlap_iou": 0.0,
+      "bbox_smaller_box_overlap_fraction": 0.0,
+      "bbox_overlapping_object_ids": [],
+      "touches_image_edge": false,
+      "skip_3d_face": false
+    },
+    "estimated_visible_face": {
       "frame": "global",
-      "center_xyz": [
-        1813.595779,
-        2565.054872,
-        0.903544
+      "visible_surface": "rear_left_oblique",
+      "primary_face": "left",
+      "view_angle_deg": 123.07,
+      "corner_indices": [
+        0,
+        3,
+        7,
+        4
       ],
-      "size_lwh_m": [
-        4.851,
-        1.8,
-        1.807
+      "corners_xyz": [
+        [
+          1812.571,
+          2567.43,
+          0.0
+        ],
+        [
+          1812.823,
+          2562.586,
+          0.0
+        ],
+        [
+          1812.823,
+          2562.586,
+          1.807
+        ],
+        [
+          1812.571,
+          2567.43,
+          1.807
+        ]
       ],
-      "yaw_rad": 1.6229,
-      "wheelbase_observed_m": 3.013,
-      "dimension_source": "class_prior",
-      "side_anchor": "visible_wheel_line_shifted_away_from_ego",
-      "visible_wheel_line_midpoint_xy": [
-        1812.697,
-        2565.008
-      ],
-      "segmentation_longitudinal_offset_m": 0.0,
       "segmentation_fit": {
         "method": "projected_3d_bounds_enclose_mask",
         "contour_coverage": 1.0
+      },
+      "segmentation_refinement": {
+        "accepted": false,
+        "baseline_mask_iou": 0.7236,
+        "mask_iou": 0.7236,
+        "mask_coverage": 0.9732
       }
-    }
+    },
+    "segmentation_aligned_polygon": null
   }
 ]

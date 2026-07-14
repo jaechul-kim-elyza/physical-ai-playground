@@ -24,13 +24,6 @@ VEHICLE_SIZE_PRIORS_LWH = {
     "bicycle": (1.8, 0.6, 1.2),
 }
 
-# Restrict this experiment to road vehicles.  COCO/RF-DETR uses these exact
-# class names for passenger vehicles, two-wheelers, and their larger variants.
-TARGET_CLASS_NAMES = frozenset({
-    "car", "truck", "bus", "motorcycle", "bicycle",
-})
-
-
 def camera_to_global_transform(nusc: NuScenes, cam_data: dict) -> tuple[np.ndarray, np.ndarray]:
     """Return rotation and origin that transform a camera point into global coordinates."""
     calibrated_sensor = nusc.get(
@@ -174,13 +167,8 @@ def estimate_vehicle_3d_box(
     }
 
 
-def project_3d_box_to_image(
-    box: dict,
-    camera_intrinsic: np.ndarray,
-    rotation_global_camera: np.ndarray,
-    origin_global_camera: np.ndarray,
-) -> np.ndarray | None:
-    """Project global-frame 3D box corners into the current camera image."""
+def global_box_corners(box: dict) -> np.ndarray:
+    """Return the eight 3D box corners in global coordinates."""
     length, width, height = box["size_lwh_m"]
     center = np.asarray(box["center_xyz"], dtype=float)
     yaw = box["yaw_rad"]
@@ -202,7 +190,17 @@ def project_3d_box_to_image(
         [np.sin(yaw), np.cos(yaw), 0.0],
         [0.0, 0.0, 1.0],
     ])
-    corners_global = (rotation_z @ local_corners.T).T + center
+    return (rotation_z @ local_corners.T).T + center
+
+
+def project_3d_box_to_image(
+    box: dict,
+    camera_intrinsic: np.ndarray,
+    rotation_global_camera: np.ndarray,
+    origin_global_camera: np.ndarray,
+) -> np.ndarray | None:
+    """Project global-frame 3D box corners into the current camera image."""
+    corners_global = global_box_corners(box)
 
     # rotation_global_camera transforms camera -> global, so transpose it for
     # global -> camera.  A box behind the camera must not be drawn.
@@ -214,6 +212,87 @@ def project_3d_box_to_image(
 
     projected = (camera_intrinsic @ corners_camera.T).T
     return projected[:, :2] / projected[:, 2:3]
+
+
+def visible_vehicle_face(box: dict, ego_origin_global: np.ndarray) -> dict:
+    """Return the visible vertical vehicle face(s) from the ego viewpoint.
+
+    A strictly side-on view still has a small front/rear component in a
+    perspective image.  When that component is material, return both adjacent
+    faces rather than dropping the vehicle's visible end cap.
+    """
+    yaw = box["yaw_rad"]
+    center_xy = np.asarray(box["center_xyz"][:2], dtype=float)
+    heading_axis = np.array([np.cos(yaw), np.sin(yaw)])
+    # Positive local-width is vehicle-left for a length axis pointing at yaw.
+    vehicle_left_axis = np.array([-np.sin(yaw), np.cos(yaw)])
+    view_vector = np.asarray(ego_origin_global[:2]) - center_xy
+    view_vector /= max(np.linalg.norm(view_vector), 1e-8)
+    longitudinal = float(np.dot(view_vector, heading_axis))
+    lateral = float(np.dot(view_vector, vehicle_left_axis))
+    view_angle_deg = float(np.degrees(np.arctan2(lateral, longitudinal)))
+
+    longitudinal_face = "front" if longitudinal >= 0 else "rear"
+    lateral_face = "left" if lateral >= 0 else "right"
+    # A 30-degree cone yields an unambiguous face.  Between the two cones the
+    # camera sees a corner; retain that fact while drawing its dominant face.
+    if abs(longitudinal) >= abs(lateral) * np.sqrt(3):
+        visible_surface = longitudinal_face
+        primary_face = longitudinal_face
+    elif abs(lateral) >= abs(longitudinal) * np.sqrt(3):
+        visible_surface = lateral_face
+        primary_face = lateral_face
+    else:
+        visible_surface = f"{longitudinal_face}_{lateral_face}_oblique"
+        primary_face = (
+            longitudinal_face
+            if abs(longitudinal) >= abs(lateral) else lateral_face
+        )
+
+    face_indices = {
+        "front": (0, 1, 5, 4),
+        "rear": (3, 2, 6, 7),
+        "left": (0, 3, 7, 4),
+        "right": (1, 2, 6, 5),
+    }
+    corners = global_box_corners(box)
+    secondary_face = lateral_face if primary_face == longitudinal_face else longitudinal_face
+    primary_component = max(abs(longitudinal), abs(lateral))
+    secondary_component = min(abs(longitudinal), abs(lateral))
+    # About seven degrees away from a pure face-on/side-on view.  This keeps
+    # a genuinely edge-on end cap out of the result but covers the rear/front
+    # visible in examples such as sample_10.
+    visible_faces = [primary_face]
+    if secondary_component / max(primary_component, 1e-8) >= 0.12:
+        visible_faces.append(secondary_face)
+    indices = face_indices[primary_face]
+
+    face_parts = []
+    for name in visible_faces:
+        part_indices = face_indices[name]
+        face_parts.append({
+            "name": name,
+            "corner_indices": list(part_indices),
+            "corners_xyz": [
+                [round(float(value), 3) for value in corner]
+                for corner in corners[list(part_indices)]
+            ],
+        })
+    return {
+        "frame": "global",
+        "visible_surface": visible_surface,
+        "primary_face": primary_face,
+        "visible_faces": face_parts,
+        "view_angle_deg": round(view_angle_deg, 2),
+        # Retained for consumers of the earlier single-face JSON schema.
+        "corner_indices": list(indices),
+        "corners_xyz": [
+            [round(float(value), 3) for value in corner]
+            for corner in corners[list(indices)]
+        ],
+        "segmentation_fit": box.get("segmentation_fit"),
+        "segmentation_refinement": box.get("visible_face_refinement"),
+    }
 
 
 def box_with_dimensions_anchored_to_near_side(
@@ -320,10 +399,28 @@ def fit_3d_box_to_segmentation(
     # Width changes the ego-side anchor, so greedy growth can occasionally
     # make a projection worse even though the physical box gets larger.
     if coverage < 0.999:
-        length_scales = (1.0, 1.05, 1.10, 1.20, 1.35, 1.50)
+        # If wheel contacts are detected on only one end of a vehicle, the
+        # initial wheel-line pose can put most of the silhouette outside the
+        # class-prior projection.  Use a wider recovery search only for that
+        # case; normal fits retain the compact, physically plausible search.
+        severe_undercoverage = coverage < 0.70
+        length_scales = (
+            (1.0, 1.10, 1.25, 1.50, 1.75, 2.00, 2.50, 3.00)
+            if severe_undercoverage else
+            (1.0, 1.05, 1.10, 1.20, 1.35, 1.50)
+        )
         width_scales = (1.0, 1.10, 1.25)
-        height_scales = (1.0, 1.05, 1.10, 1.20, 1.35, 1.50)
-        longitudinal_offsets = (-1.0, -0.6, -0.3, 0.0, 0.3, 0.6, 1.0)
+        height_scales = (
+            (1.0, 1.15, 1.35, 1.60, 2.00, 2.50, 3.00)
+            if severe_undercoverage else
+            (1.0, 1.05, 1.10, 1.20, 1.35, 1.50)
+        )
+        longitudinal_offsets = (
+            (-3.0, -2.0, -1.5, -1.0, -0.6, -0.3, 0.0,
+             0.3, 0.6, 1.0, 1.5, 2.0, 3.0)
+            if severe_undercoverage else
+            (-1.0, -0.6, -0.3, 0.0, 0.3, 0.6, 1.0)
+        )
         containing_options = []
         best_option = (coverage, dimensions, candidate, 0.0)
         for length_scale in length_scales:
@@ -396,6 +493,335 @@ def draw_3d_box(
     )
     for start, end in edges:
         cv2.line(image, tuple(corners[start]), tuple(corners[end]), color, 3)
+
+
+def draw_visible_vehicle_face(
+    image: np.ndarray,
+    projected_corners: np.ndarray | None,
+    face: dict | None,
+    color: tuple[int, int, int] = (0, 255, 0),
+) -> None:
+    """Draw every materially visible vertical face of the vehicle."""
+    if projected_corners is None or face is None:
+        return
+
+    overlay = image.copy()
+    parts = face.get("visible_faces", [{
+        "name": face["primary_face"],
+        "corner_indices": face["corner_indices"],
+    }])
+    projected_parts = []
+    for part in parts:
+        corners = np.rint(
+            projected_corners[part["corner_indices"]]
+        ).astype(np.int32)
+        cv2.fillConvexPoly(overlay, corners, color)
+        projected_parts.append(corners)
+    cv2.addWeighted(overlay, 0.18, image, 0.82, 0, dst=image)
+    for corners in projected_parts:
+        cv2.polylines(image, [corners], isClosed=True, color=color, thickness=3)
+    label_point = tuple(
+        np.vstack(projected_parts).mean(axis=0).astype(np.int32)
+    )
+    label = " + ".join(part["name"].upper() for part in parts)
+    cv2.putText(
+        image,
+        label,
+        (label_point[0] - 45, label_point[1]),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.5,
+        color,
+        2,
+        cv2.LINE_AA,
+    )
+
+
+def visible_face_mask_metrics(
+    mask: np.ndarray,
+    projected_corners: np.ndarray | None,
+    face: dict | None,
+) -> tuple[float, float]:
+    """Return IoU and mask coverage for one projected visible face."""
+    face_mask = projected_visible_face_mask(mask.shape, projected_corners, face)
+    if face_mask is None:
+        return 0.0, 0.0
+    object_mask = mask.astype(bool)
+    intersection = np.logical_and(object_mask, face_mask).sum()
+    union = np.logical_or(object_mask, face_mask).sum()
+    iou = float(intersection / union) if union else 0.0
+    coverage = float(intersection / object_mask.sum()) if object_mask.any() else 0.0
+    return iou, coverage
+
+
+def projected_visible_face_mask(
+    image_shape: tuple[int, int],
+    projected_corners: np.ndarray | None,
+    face: dict | None,
+) -> np.ndarray | None:
+    """Rasterize a selected 3D face in image coordinates."""
+    if projected_corners is None or face is None:
+        return None
+    face_mask = np.zeros(image_shape, dtype=np.uint8)
+    parts = face.get("visible_faces", [{
+        "corner_indices": face["corner_indices"],
+    }])
+    for part in parts:
+        vertices = np.rint(
+            projected_corners[part["corner_indices"]]
+        ).astype(np.int32)
+        cv2.fillConvexPoly(face_mask, vertices, 1)
+    return face_mask.astype(bool)
+
+
+def infer_occlusion(
+    mask: np.ndarray,
+    projected_corners: np.ndarray | None,
+    face: dict | None,
+    all_masks: np.ndarray,
+    detection_boxes: np.ndarray,
+    object_id: int,
+) -> dict:
+    """Record conservative occlusion evidence from masks and detector boxes."""
+    object_mask = mask.astype(bool)
+    touches_image_edge = bool(
+        object_mask[0].any() or object_mask[-1].any()
+        or object_mask[:, 0].any() or object_mask[:, -1].any()
+    )
+    face_mask = projected_visible_face_mask(mask.shape, projected_corners, face)
+    box = detection_boxes[object_id]
+    bbox_overlaps = []
+    for other_id, other_box in enumerate(detection_boxes):
+        if other_id == object_id:
+            continue
+        left = max(float(box[0]), float(other_box[0]))
+        top = max(float(box[1]), float(other_box[1]))
+        right = min(float(box[2]), float(other_box[2]))
+        bottom = min(float(box[3]), float(other_box[3]))
+        intersection = max(0.0, right - left) * max(0.0, bottom - top)
+        if intersection <= 0:
+            continue
+        box_area = max(0.0, float(box[2] - box[0])) * max(0.0, float(box[3] - box[1]))
+        other_area = max(0.0, float(other_box[2] - other_box[0])) * max(0.0, float(other_box[3] - other_box[1]))
+        iou = intersection / max(box_area + other_area - intersection, 1e-8)
+        smaller_box_fraction = intersection / max(min(box_area, other_area), 1e-8)
+        bbox_overlaps.append({
+            "object_id": other_id,
+            "iou": round(float(iou), 4),
+            "smaller_box_overlap_fraction": round(float(smaller_box_fraction), 4),
+        })
+    max_bbox_iou = max((entry["iou"] for entry in bbox_overlaps), default=0.0)
+    max_bbox_fraction = max(
+        (entry["smaller_box_overlap_fraction"] for entry in bbox_overlaps),
+        default=0.0,
+    )
+
+    if face_mask is None:
+        return {
+            "status": (
+                "truncated" if touches_image_edge
+                else "possibly_occluded"
+                if max_bbox_iou >= 0.05 or max_bbox_fraction >= 0.10
+                else "unknown"
+            ),
+            "reason": "no_metric_visible_face",
+            "bbox_overlap_iou": max_bbox_iou,
+            "bbox_smaller_box_overlap_fraction": max_bbox_fraction,
+            "bbox_overlapping_object_ids": [
+                entry["object_id"] for entry in bbox_overlaps
+            ],
+            "touches_image_edge": touches_image_edge,
+        }
+
+    expected_area = max(1, int(face_mask.sum()))
+    visible_coverage = float(np.logical_and(face_mask, object_mask).sum() / expected_area)
+    missing_face = np.logical_and(face_mask, ~object_mask)
+    occluder_ids = []
+    occluder_pixels = 0
+    for other_id, other_mask in enumerate(all_masks):
+        if other_id == object_id:
+            continue
+        overlap = int(np.logical_and(missing_face, other_mask.astype(bool)).sum())
+        if overlap:
+            occluder_ids.append(other_id)
+            occluder_pixels += overlap
+    occluder_ratio = occluder_pixels / expected_area
+
+    if touches_image_edge:
+        status = "truncated"
+    elif visible_coverage < 0.90 and occluder_ratio >= 0.03:
+        status = "occluded"
+    elif max_bbox_iou >= 0.05 or max_bbox_fraction >= 0.10:
+        # A detector-box overlap is useful evidence, but not definitive: two
+        # nearby objects can overlap in 2D without one hiding the other.
+        status = "possibly_occluded"
+    elif visible_coverage >= 0.90:
+        status = "not_occluded"
+    else:
+        # A vehicle silhouette has wheel arches/windows that also lower face
+        # coverage.  Without another mask in the missing region this is not
+        # enough evidence to call it occlusion.
+        status = "unknown"
+    return {
+        "status": status,
+        "reason": "visible_face_mask_comparison",
+        "visible_face_coverage": round(visible_coverage, 4),
+        "other_mask_occluder_ratio": round(occluder_ratio, 4),
+        "occluder_object_ids": occluder_ids,
+        "bbox_overlap_iou": max_bbox_iou,
+        "bbox_smaller_box_overlap_fraction": max_bbox_fraction,
+        "bbox_overlapping_object_ids": [
+            entry["object_id"] for entry in bbox_overlaps
+        ],
+        "touches_image_edge": touches_image_edge,
+    }
+
+
+def draw_occlusion_status(
+    image: np.ndarray,
+    mask: np.ndarray,
+    occlusion: dict,
+) -> None:
+    """Render the conservative occlusion assessment next to one object mask."""
+    ys, xs = np.where(mask)
+    if not xs.size:
+        return
+    status = occlusion["status"]
+    labels = {
+        "occluded": "OCCLUDED",
+        "possibly_occluded": "POSSIBLE OCC",
+        "truncated": "TRUNCATED",
+        "not_occluded": "CLEAR",
+        "unknown": "UNKNOWN",
+    }
+    colors = {
+        "occluded": (255, 0, 0),
+        "possibly_occluded": (255, 165, 0),
+        "truncated": (255, 165, 0),
+        "not_occluded": (0, 255, 0),
+        "unknown": (255, 255, 0),
+    }
+    text = f"OCC: {labels[status]}"
+    position = (int(xs.min()), max(18, int(ys.min()) - 8))
+    # A dark outline keeps the status legible on bright vehicles and road.
+    cv2.putText(
+        image, text, position, cv2.FONT_HERSHEY_SIMPLEX,
+        0.45, (0, 0, 0), 3, cv2.LINE_AA,
+    )
+    cv2.putText(
+        image, text, position, cv2.FONT_HERSHEY_SIMPLEX,
+        0.45, colors[status], 1, cv2.LINE_AA,
+    )
+
+
+def refine_visible_face_with_segmentation(
+    box: dict | None,
+    mask: np.ndarray,
+    camera_intrinsic: np.ndarray,
+    rotation_global_camera: np.ndarray,
+    origin_global_camera: np.ndarray,
+    ego_origin_global: np.ndarray,
+) -> tuple[dict | None, dict | None]:
+    """Accept a local face fit only when it improves mask overlap safely."""
+    if box is None:
+        return None, None
+
+    def evaluate(candidate: dict) -> tuple[float, float, dict]:
+        projected = project_3d_box_to_image(
+            candidate,
+            camera_intrinsic,
+            rotation_global_camera,
+            origin_global_camera,
+        )
+        face = visible_vehicle_face(candidate, ego_origin_global)
+        iou, coverage = visible_face_mask_metrics(mask, projected, face)
+        return iou, coverage, face
+
+    baseline_iou, baseline_coverage, _ = evaluate(box)
+    best_box = box
+    best_iou = baseline_iou
+    best_coverage = baseline_coverage
+    base_dimensions = np.asarray(box["size_lwh_m"], dtype=float)
+    base_offset = float(box.get("segmentation_longitudinal_offset_m", 0.0))
+    minimum_coverage = max(0.90, baseline_coverage - 0.02)
+
+    # Keep the ego-side anchor and class width prior.  Optimize only the two
+    # dimensions visible in a side/front mask plus a small longitudinal shift.
+    for length_scale in (0.88, 0.94, 1.0, 1.06, 1.12):
+        for height_scale in (0.88, 0.94, 1.0, 1.06, 1.12):
+            for offset_delta in (-0.4, -0.2, 0.0, 0.2, 0.4):
+                dimensions = base_dimensions * np.array([
+                    length_scale, 1.0, height_scale
+                ])
+                candidate = box_with_dimensions_anchored_to_near_side(
+                    box,
+                    dimensions,
+                    ego_origin_global,
+                    base_offset + offset_delta,
+                )
+                candidate_iou, candidate_coverage, _ = evaluate(candidate)
+                if (
+                    candidate_coverage >= minimum_coverage
+                    and candidate_iou > best_iou + 0.005
+                ):
+                    best_box = candidate
+                    best_iou = candidate_iou
+                    best_coverage = candidate_coverage
+
+    accepted = best_box is not box
+    selected_box = best_box if accepted else box
+    selected_box["visible_face_refinement"] = {
+        "accepted": accepted,
+        "baseline_mask_iou": round(float(baseline_iou), 4),
+        "mask_iou": round(float(best_iou), 4),
+        "mask_coverage": round(float(best_coverage), 4),
+    }
+    return selected_box, selected_box["visible_face_refinement"]
+
+
+def segmentation_aligned_polygon(mask: np.ndarray) -> dict | None:
+    """Return the actual exterior polygon of one segmentation component."""
+    contours, _ = cv2.findContours(
+        mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
+    if not contours:
+        return None
+
+    contour = max(contours, key=cv2.contourArea)
+    return {
+        "frame": "image",
+        "vertices_xy": [
+            [round(float(x), 1), round(float(y), 1)]
+            for x, y in contour.reshape(-1, 2)
+        ],
+        "contour_coverage": 1.0,
+        "method": "segmentation_exterior_contour",
+    }
+
+
+def draw_segmentation_polygon(
+    image: np.ndarray,
+    polygon: dict | None,
+    color: tuple[int, int, int] = (255, 0, 255),
+) -> None:
+    """Draw the segmentation-aligned shape used when only one contact exists."""
+    if polygon is None:
+        return
+    vertices = np.rint(polygon["vertices_xy"]).astype(np.int32)
+    overlay = image.copy()
+    cv2.fillPoly(overlay, [vertices], color)
+    cv2.addWeighted(overlay, 0.14, image, 0.86, 0, dst=image)
+    cv2.polylines(image, [vertices], isClosed=True, color=color, thickness=3)
+    label_point = tuple(vertices.mean(axis=0).astype(np.int32))
+    cv2.putText(
+        image,
+        "MASK SHAPE",
+        (label_point[0] - 40, label_point[1]),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.45,
+        color,
+        2,
+        cv2.LINE_AA,
+    )
 
 
 def bottom_envelope(mask: np.ndarray) -> np.ndarray:
@@ -655,17 +1081,7 @@ detections = model.predict(
     threshold=0.5
 )
 
-if "class_name" in detections.data:
-    target_mask = np.isin(
-        detections.data["class_name"], list(TARGET_CLASS_NAMES)
-    )
-    detections = detections[target_mask]
-    print(
-        "Vehicle/two-wheeler detections:",
-        len(detections),
-    )
-else:
-    print("No class names available; keeping all detections")
+print("All-class detections:", len(detections))
 
 
 print(type(detections))
@@ -693,8 +1109,8 @@ annotated = mask_annotator.annotate(
 )
 
 
-# The green wireframe below is the estimated 3D box.  Keep 2D detection boxes
-# optional so they do not obscure it.
+# The green polygon below is the ego-facing estimated 3D face.  Keep 2D
+# detection boxes optional so they do not obscure it.
 if DRAW_2D_BOXES:
     box_annotator = sv.BoxAnnotator()
     annotated = box_annotator.annotate(
@@ -763,12 +1179,54 @@ if detections.mask is not None:
             origin_global_camera,
             ego_origin_global,
         )
+        estimated_3d_box, _ = refine_visible_face_with_segmentation(
+            estimated_3d_box,
+            mask,
+            camera_intrinsic,
+            rotation_global_camera,
+            origin_global_camera,
+            ego_origin_global,
+        )
         projected_3d_box = project_3d_box_to_image(
             estimated_3d_box,
             camera_intrinsic,
             rotation_global_camera,
             origin_global_camera,
         ) if estimated_3d_box is not None else None
+        estimated_visible_face = (
+            visible_vehicle_face(estimated_3d_box, ego_origin_global)
+            if estimated_3d_box is not None else None
+        )
+        occlusion = infer_occlusion(
+            mask,
+            projected_3d_box,
+            estimated_visible_face,
+            masks,
+            detections.xyxy,
+            obj_id,
+        )
+        # A partial/overlapped silhouette does not constrain a physical face
+        # reliably.  Keep its 2-D segmentation and contact evidence, but do
+        # not publish or render a 3-D face for it.  ``possibly_occluded`` is
+        # included deliberately: bbox overlap is enough to make the fitted
+        # depth/yaw unstable, even if it is not definitive proof of hiding.
+        skip_3d_face = occlusion["status"] in {
+            "occluded",
+            "possibly_occluded",
+            "truncated",
+        }
+        occlusion["skip_3d_face"] = skip_3d_face
+        if skip_3d_face:
+            estimated_3d_box = None
+            projected_3d_box = None
+            estimated_visible_face = None
+        segmentation_polygon = (
+            segmentation_aligned_polygon(mask)
+            # Any class without a metric 3D face still receives its exact
+            # segmentation shape, including occluded vehicles, people and
+            # non-road objects.
+            if estimated_visible_face is None else None
+        )
         result = {
             "object_id": obj_id,
             "class_id": class_id,
@@ -780,8 +1238,13 @@ if detections.mask is not None:
             # Representative contact: physically closest visible ground point
             # to the ego vehicle, computed after 3D ground-plane projection.
             "ego_nearest_ground_contact": ego_nearest_contact,
-            # Only vehicles with >= 2 visible contact points receive a box.
-            "estimated_3d_box": estimated_3d_box,
+            "occlusion": occlusion,
+            # Only the ego-facing vehicle face is emitted.  The full cuboid is
+            # an internal fitting aid and is intentionally not exported.
+            "estimated_visible_face": estimated_visible_face,
+            # A single contact cannot constrain yaw/depth reliably.  Return
+            # the segmentation's own image-space exterior polygon instead.
+            "segmentation_aligned_polygon": segmentation_polygon,
         }
         ground_contact_results.append(result)
 
@@ -790,9 +1253,22 @@ if detections.mask is not None:
             f"Object {obj_id}: {len(contacts)} contact candidate(s)",
             contacts
         )
+        print("Occlusion:", occlusion)
+        draw_occlusion_status(annotated, mask, occlusion)
         if estimated_3d_box is not None:
-            print("Estimated 3D box:", estimated_3d_box)
-            draw_3d_box(annotated, projected_3d_box)
+            print("Estimated visible 3D face:", estimated_visible_face)
+            draw_visible_vehicle_face(
+                annotated, projected_3d_box, estimated_visible_face
+            )
+        elif segmentation_polygon is not None:
+            if skip_3d_face:
+                print("Skipped visible 3D face due to occlusion evidence")
+            print(
+                "Segmentation-aligned polygon:",
+                f"vertices={len(segmentation_polygon['vertices_xy'])}",
+                f"coverage={segmentation_polygon['contour_coverage']}",
+            )
+            draw_segmentation_polygon(annotated, segmentation_polygon)
         if ego_nearest_contact is not None:
             print("Ego-nearest ground contact:", ego_nearest_contact)
 

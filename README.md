@@ -53,3 +53,5 @@ Modern Physical AI systems require robust perception that can understand:
 - How can visual information be converted into actionable physical understanding?
 
 This repository explores practical solutions combining:
+
+- [Segmentation-ground-contact estimation](perception/segmentation-ground-contact/README.md): RF-DETR instance segmentation, ground-contact candidates, conservative occlusion handling, and visible vehicle-face projection.
